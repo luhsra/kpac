@@ -1,0 +1,8 @@
+#define DEV_STANDBY	0
+#define DEV_PAC		1
+#define DEV_AUT		2
+
+#define REG_STATE	0xA000000
+#define REG_PLAIN	0xA000008
+#define REG_TWEAK	0xA000010
+#define REG_CIPHER	0xA000018
