@@ -7,6 +7,8 @@
 #include <attribs.h>
 #include <memmodel.h>
 #include <emit-rtl.h>
+#include <gimple.h>
+#include <gimple-iterator.h>
 
 #define PLUGIN_NAME "pac_sw_plugin"
 #define PLUGIN_VERSION "0.1"
@@ -32,54 +34,113 @@ enum { PROLOGUE, EPILOGUE };
 
 char *prologue_s = NULL;
 char *epilogue_s = NULL;
+char *init_function = NULL;
 
 extern gcc::context *g;
 
-static tree handle_instrument_attribute(tree *node, tree name, tree args, int flags, bool *no_add_attrs);
-static unsigned int instrumentation_exec(void);
+static unsigned int execute_inst_pac(void);
+static unsigned int execute_init_pac(void);
+
+static tree handle_exclude_attr(tree *node, tree name, tree args,
+                                int flags, bool *no_add_attrs)
+{
+    return NULL_TREE;
+}
 
 // Structure describing an attribute and a function to handle it.
 static struct attribute_spec exclude_attr =
 {
     .name = EXCLUDE_ATTR,
-    .handler = handle_instrument_attribute,
+    .handler = handle_exclude_attr,
 };
 
-class ins_rtl_pass : public rtl_opt_pass {
+// Metadata for the RTL instrumentation pass.  Attaches prologue and epilogue to
+// functions where required.
+const pass_data pass_data_inst_pac = {
+    .type = RTL_PASS,
+    .name = "inst_pac",
+    .optinfo_flags = OPTGROUP_NONE,
+    .tv_id = TV_NONE,
+    .properties_required = 0,
+    .properties_provided = 0,
+    .properties_destroyed = 0,
+    .todo_flags_start = 0,
+    .todo_flags_finish = 0
+};
+
+class pass_inst_pac : public rtl_opt_pass {
 public:
-    ins_rtl_pass (const pass_data& data, gcc::context *ctxt) : rtl_opt_pass (data, ctxt) {}
-    unsigned int execute(function* exec_fun)
+    pass_inst_pac (gcc::context *ctxt) : rtl_opt_pass (pass_data_inst_pac, ctxt) {}
+    virtual unsigned int execute(function* exec_fun)
     {
-        return instrumentation_exec();
+        return execute_inst_pac();
     }
 };
 
-// Metadata for a pass, non-varying across all instances of a pass.
-struct pass_data ins_pass_data = {
-    .type = RTL_PASS,               // type of pass
-    .name = PLUGIN_NAME,            // name of plugin
-    .optinfo_flags = OPTGROUP_NONE, // no opt dump
-    .tv_id = TV_NONE,               // no timevar (see timevar.h)
-    .properties_required = 0,       // no prop in input
-    .properties_provided = 0,       // no prop in output
-    .properties_destroyed = 0,      // no prop removed
-    .todo_flags_start = 0,          // need nothing before
-    .todo_flags_finish = 0          // need nothing after
+// Instantiate a new instrumentation RTL pass.
+pass_inst_pac ins_pass = pass_inst_pac(g);
+
+// Metadata for the initialization pass working on GIMPLE.  Registered only if
+// the init function is provided.  Attaches the init function to main.
+const pass_data pass_data_init_pac = {
+    .type = GIMPLE_PASS,
+    .name = "init_pac",
+    .optinfo_flags = OPTGROUP_NONE,
+    .tv_id = TV_NONE,
+    .properties_required = 0,
+    .properties_provided = 0,
+    .properties_destroyed = 0,
+    .todo_flags_start = 0,
+    .todo_flags_finish = 0,
 };
 
-// Instantiate a new instrumentation RTL pass.
-ins_rtl_pass inst_pass = ins_rtl_pass(ins_pass_data, g);
-
-static tree handle_instrument_attribute(tree *node, tree name, tree args, int flags, bool *no_add_attrs)
+class pass_init_pac : public gimple_opt_pass
 {
-    return NULL_TREE;
-}
+public:
+    pass_init_pac (gcc::context *ctxt) : gimple_opt_pass (pass_data_init_pac, ctxt) {}
+    virtual unsigned int execute(function *)
+    {
+        return execute_init_pac();
+    }
+};
+
+// Instantiate a new initialization pass.
+pass_init_pac init_pass = pass_init_pac(g);
 
 // Plugin callback called during attribute registration.
 static void register_attributes(void *event_data, void *data)
 {
     register_attribute(&exclude_attr);
     dbg("Registered attribute '%s'.", EXCLUDE_ATTR);
+}
+
+// Attach initialization function to main
+static unsigned int execute_init_pac(void)
+{
+    tree fn_type, function;
+    basic_block bb;
+    gimple *stmt;
+    gimple_stmt_iterator gsi;
+    gcall *call;
+
+    const char *fn_name = IDENTIFIER_POINTER(DECL_NAME(current_function_decl));
+
+    if (strcmp(fn_name, "main") != 0)
+        return 0;
+
+    fn_type = build_function_type_list(void_type_node, void_type_node, NULL_TREE);
+    function = build_fn_decl(init_function, fn_type);
+
+    bb = ENTRY_BLOCK_PTR_FOR_FN(cfun)->next_bb;
+    stmt = gsi_stmt(gsi_start_bb(bb));
+    gsi = gsi_for_stmt(stmt);
+
+    call = gimple_build_call(function, 0);
+    gsi_insert_before(&gsi, call, GSI_NEW_STMT);
+
+    dbg("Attached %s to %s.", init_function, fn_name);
+
+    return 0;
 }
 
 // Recursively check for existence of protected declarations (arrays).
@@ -166,12 +227,18 @@ static void insert_epilogue(void)
 }
 
 // For each function lookup attributes and attach instrumentation.
-static unsigned int instrumentation_exec(void)
+static unsigned int execute_inst_pac(void)
 {
-    const char *fn_name = IDENTIFIER_POINTER (DECL_NAME (current_function_decl));
+    const char *fn_name = IDENTIFIER_POINTER(DECL_NAME(current_function_decl));
 
     tree attrlist = DECL_ATTRIBUTES(current_function_decl);
     tree attr = lookup_attribute(EXCLUDE_ATTR, attrlist);
+
+    if (init_function && (strcmp(fn_name, init_function) == 0 ||
+                          strcmp(fn_name, "main") == 0)) {
+        dbg("%s: Excluded due to init function.", fn_name);
+        return 0;
+    }
 
     // Do not instrument the function if the exclude attribute is present
     if (attr != NULL_TREE) {
@@ -221,11 +288,18 @@ static char *read_code(const char *file)
 
 int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
 {
-    struct register_pass_info pass = {
-        .pass = &inst_pass,
+    struct register_pass_info pass_inst = {
+        .pass = &ins_pass,
         .reference_pass_name = "*free_cfg", // Insert after the first instance
         .ref_pass_instance_number = 1,      // of CFG cleanup pass.
         .pos_op = PASS_POS_INSERT_AFTER,
+    };
+
+    struct register_pass_info pass_init = {
+        .pass = &init_pass,
+        .reference_pass_name = "fixup_cfg",
+        .ref_pass_instance_number = 1,
+        .pos_op = PASS_POS_INSERT_BEFORE,
     };
 
     if (strncmp(PLUGIN_GCC_REQ, ver->basever, sizeof(PLUGIN_GCC_REQ))) {
@@ -238,6 +312,8 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
             prologue_s = read_code(info->argv[i].value);
         else if (strcmp(info->argv[i].key, "epilogue") == 0)
             epilogue_s = read_code(info->argv[i].value);
+        else if (strcmp(info->argv[i].key, "init-function") == 0)
+            init_function = info->argv[i].value;
     }
 
     if (!prologue_s) {
@@ -255,7 +331,10 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
     // Get called at attribute registration.
     register_callback(PLUGIN_NAME, PLUGIN_ATTRIBUTES, register_attributes, NULL);
     // Add our pass into the pass manager.
-    register_callback(PLUGIN_NAME, PLUGIN_PASS_MANAGER_SETUP, NULL, &pass);
+    register_callback(PLUGIN_NAME, PLUGIN_PASS_MANAGER_SETUP, NULL, &pass_inst);
+
+    if (init_function)
+        register_callback(PLUGIN_NAME, PLUGIN_PASS_MANAGER_SETUP, NULL, &pass_init);
 
     dbg("Version " PLUGIN_VERSION " loaded.");
 

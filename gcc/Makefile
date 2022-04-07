@@ -36,6 +36,7 @@ $(TEST): $(TEST).c $(PLUGIN) $(PROLOGUE_IN) $(EPILOGUE_IN)
 		-fplugin=./$(PLUGIN) \
 		-fplugin-arg-pac_sw_plugin-prologue=$(PROLOGUE_IN) \
 		-fplugin-arg-pac_sw_plugin-epilogue=$(EPILOGUE_IN) \
+		-fplugin-arg-pac_sw_plugin-init-function=map_device \
 		-g -O0 -o $@
 
 # testnostd: gcc_pac_plugin.so
