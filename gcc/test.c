@@ -22,25 +22,11 @@ void f1()
     return;
 }
 
-void map_device(void)
+void map_device(void);
+
+int main(int argc, char *argv[])
 {
-    int fd = open("/dev/shm/pa", O_RDWR);
-    if (fd == -1) {
-        perror("open");
-        exit(1);
-    }
-
-
-    unsigned long *area = mmap((void *) 0xA000000UL, PAGE_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, fd, 0);
-    if (area == MAP_FAILED) {
-        perror("mmap");
-        exit(1);
-    }
-}
-
-__attribute((pac_exclude)) int main()
-{
-    map_device();
+    printf("%s\n", argv[0]);
     f1();
     return 1;
 }

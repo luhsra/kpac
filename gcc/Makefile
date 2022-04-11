@@ -10,6 +10,7 @@ PROLOGUE_IN = prologue.s
 EPILOGUE_IN = epilogue.s
 
 TEST = test
+MAP_DEVICE = map_device.o
 
 # Plugins directory of GCC
 GCC_PLUGINS_DIR = $(shell $(TARGET_GCC) -print-file-name=plugin)
@@ -31,8 +32,9 @@ $(PROLOGUE_IN) $(EPILOGUE_IN):
 $(PLUGIN): $(SRC)
 	$(CXX) -shared $(CXXFLAGS) $^ -o $@
 
-$(TEST): $(TEST).c $(PLUGIN) $(PROLOGUE_IN) $(EPILOGUE_IN)
-	$(TARGET_GCC) $^ \
+
+$(TEST): $(TEST).c $(MAP_DEVICE) $(PLUGIN) $(PROLOGUE_IN) $(EPILOGUE_IN)
+	$(TARGET_GCC) $< $(MAP_DEVICE) \
 		-fplugin=./$(PLUGIN) \
 		-fplugin-arg-pac_sw_plugin-prologue=$(PROLOGUE_IN) \
 		-fplugin-arg-pac_sw_plugin-epilogue=$(EPILOGUE_IN) \
