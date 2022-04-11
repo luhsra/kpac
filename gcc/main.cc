@@ -252,8 +252,10 @@ static unsigned int execute_inst_pac(void)
         return 0;
     }
 
-    insert_prologue();
-    insert_epilogue();
+    if (prologue_s)
+        insert_prologue();
+    if (epilogue_s)
+        insert_epilogue();
 
     dbg("%s: Successfully instrumented.", fn_name);
 
@@ -316,22 +318,25 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
             init_function = info->argv[i].value;
     }
 
-    if (!prologue_s) {
-        err("Unable fetch prologue source file.");
-        return 1;
-    }
+    // if (!prologue_s) {
+    //     err("Unable fetch prologue source file.");
+    //     return 1;
+    // }
 
-    if (!epilogue_s) {
-        err("Unable fetch epilogue source file.");
-        return 1;
-    }
+    // if (!epilogue_s) {
+    //     err("Unable fetch epilogue source file.");
+    //     return 1;
+    // }
 
     // Register info about this plugin.
     register_callback(PLUGIN_NAME, PLUGIN_INFO, NULL, &inst_plugin_info);
-    // Get called at attribute registration.
-    register_callback(PLUGIN_NAME, PLUGIN_ATTRIBUTES, register_attributes, NULL);
-    // Add our pass into the pass manager.
-    register_callback(PLUGIN_NAME, PLUGIN_PASS_MANAGER_SETUP, NULL, &pass_inst);
+
+    if (prologue_s || epilogue_s) {
+        // Get called at attribute registration.
+        register_callback(PLUGIN_NAME, PLUGIN_ATTRIBUTES, register_attributes, NULL);
+        // Add our pass into the pass manager.
+        register_callback(PLUGIN_NAME, PLUGIN_PASS_MANAGER_SETUP, NULL, &pass_inst);
+    }
 
     if (init_function)
         register_callback(PLUGIN_NAME, PLUGIN_PASS_MANAGER_SETUP, NULL, &pass_init);
