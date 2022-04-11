@@ -111,7 +111,7 @@ pass_init_pac init_pass = pass_init_pac(g);
 static void register_attributes(void *event_data, void *data)
 {
     register_attribute(&exclude_attr);
-    dbg("Registered attribute '%s'.", EXCLUDE_ATTR);
+    // dbg("Registered attribute '%s'.", EXCLUDE_ATTR);
 }
 
 // Attach initialization function to main
@@ -305,7 +305,7 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
     };
 
     if (strncmp(PLUGIN_GCC_REQ, ver->basever, sizeof(PLUGIN_GCC_REQ))) {
-        err("Incompatible GCC version.");
+        err("GCC >%s required.", PLUGIN_GCC_REQ);
         return 1;
     }
 
@@ -340,8 +340,6 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
 
     if (init_function)
         register_callback(PLUGIN_NAME, PLUGIN_PASS_MANAGER_SETUP, NULL, &pass_init);
-
-    dbg("Version " PLUGIN_VERSION " loaded.");
 
     return 0;
 }
