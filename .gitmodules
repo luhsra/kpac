@@ -1,3 +1,4 @@
 [submodule "bench/tacle-bench"]
 	path = bench/tacle-bench
 	url = https://github.com/tacle/tacle-bench.git
+	ignore = untracked
