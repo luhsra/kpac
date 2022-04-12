@@ -20,7 +20,7 @@ CXXFLAGS += -g -I$(GCC_PLUGINS_DIR)/include -fPIC -fno-rtti -DDEBUG
 
 .PHONY: all clean
 
-all: $(PLUGIN)
+all: $(PLUGIN) $(TEST)
 
 # Preprocess assembler files before embedding
 $(PROLOGUE_IN): $(PROLOGUE)
@@ -31,7 +31,6 @@ $(PROLOGUE_IN) $(EPILOGUE_IN):
 
 $(PLUGIN): $(SRC)
 	$(CXX) -shared $(CXXFLAGS) $^ -o $@
-
 
 $(TEST): $(TEST).c $(MAP_DEVICE) $(PLUGIN) $(PROLOGUE_IN) $(EPILOGUE_IN)
 	$(TARGET_GCC) $< $(MAP_DEVICE) \
@@ -53,4 +52,4 @@ $(TEST): $(TEST).c $(MAP_DEVICE) $(PLUGIN) $(PROLOGUE_IN) $(EPILOGUE_IN)
 # 	-g -O0 -o bin
 
 clean:
-	rm -fv $(PLUGIN) $(TEST) $(PROLOGUE_IN) $(EPILOGUE_IN)
+	$(RM) $(PLUGIN) $(TEST) $(PROLOGUE_IN) $(EPILOGUE_IN)
