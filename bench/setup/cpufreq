@@ -1,0 +1,47 @@
+#!/bin/sh
+
+set -e
+
+################################################################################
+# DISABLE POWER SAVING
+################################################################################
+echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor \
+                       > /dev/null
+
+################################################################################
+# MODIFY TURBO SETTINGS
+################################################################################
+cd /sys/devices/system/cpu/intel_pstate
+FREQ_PERCENTAGE=100
+
+# Disable turbo boost
+echo 1 > no_turbo
+
+# Set cpu P-State min and max to be equal
+echo $FREQ_PERCENTAGE > max_perf_pct
+echo $FREQ_PERCENTAGE > min_perf_pct
+
+cd "$CWD"
+
+################################################################################
+# DISABLE HYPERTHREADING
+################################################################################
+
+# Which physical core is assigned to each logical core by checking
+# grep -H . /sys/devices/system/cpu/cpu*/topology/thread_siblings_list
+
+# Cores 0-4, 1-5, 2-6 and 3-7 are siblings, hence I will disable half of them
+# for i in {4..7}; do
+    # echo -n 0 | sudo tee /sys/devices/system/cpu/cpu${i}/online > /dev/null;
+# done
+
+################################################################################
+# CHECK
+################################################################################
+grep "" /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+grep "" /sys/devices/system/cpu/intel_pstate/*
+
+echo
+
+# Display CPU frequency for each core
+grep -E '^model name|^cpu MHz' /proc/cpuinfo
