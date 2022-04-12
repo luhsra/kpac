@@ -1,0 +1,19 @@
+# Dotfiles
+.*
+
+# Build artifacts
+*.o
+*.s
+*.d
+*.so
+compile_commands.json
+
+# Binaries
+bench/do_bench
+gcc/test
+sw/pac-sw
+sw/test
+
+!.gitattributes
+!.gitignore
+!.gitmodules
