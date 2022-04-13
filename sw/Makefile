@@ -7,7 +7,7 @@ TESTS =
 LIBS =
 
 ASAN_FLAGS = $(if $(ASAN), -fsanitize=address -fno-omit-frame-pointer -Wno-format-security,)
-DEBUG_FLAGS = $(if $(RELEASE), -O2, -g -DDEBUG)
+DEBUG_FLAGS = $(if $(DEBUG), -g -DDEBUG, -O2)
 
 CFLAGS += $(DEBUG_FLAGS) $(ASAN_FLAGS)
 CFLAGS += -Wall -Wextra --std=gnu11 #-Werror
@@ -26,10 +26,6 @@ ALL_BINS = $(TARGETS) $(TESTS:%=tests/%)
 
 .PHONY: all
 all: $(ALL_BINS)
-
-.PHONY: release
-release: RELEASE=1
-release: all
 
 $(ALL_BINS): %: %.o $(COMMON_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
