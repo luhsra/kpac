@@ -19,9 +19,13 @@ def run(path, n):
         out = sp.check_output(["./do_bench", path])
         diff[i] = float(out)
 
-    print(": %.9f (%.9f)" % (diff.mean(), diff.std()))
+    mean = diff.mean()
+    std = diff.std()
+    masked = np.ma.masked_outside(diff, mean-2*std, mean+2*std)
+    masked_count = np.ma.count_masked(masked)
+    print(": %.9f (%.9f); %d masked" % (mean, std, masked_count))
 
-    return diff
+    return masked
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run PAC-SW benchmarks.')
