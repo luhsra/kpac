@@ -22,8 +22,6 @@ void f1()
     return;
 }
 
-void map_device(void);
-
 int main(int argc, char *argv[])
 {
     printf("%s\n", argv[0]);

@@ -1,10 +1,7 @@
-COMMON_SRCS = qarma.c protected.S
+COMMON_SRCS = qarma.c
 COMMON_OBJS = $(addsuffix .o,$(basename $(COMMON_SRCS)))
 
-TARGETS = pac-sw test
-
-TESTS =
-LIBS =
+TARGETS = pac-sw
 
 ASAN_FLAGS = $(if $(ASAN), -fsanitize=address -fno-omit-frame-pointer -Wno-format-security,)
 DEBUG_FLAGS = $(if $(DEBUG), -g -DDEBUG, -O2)
@@ -15,14 +12,13 @@ CFLAGS += -D_GNU_SOURCE
 CFLAGS += -O2
 
 LDFLAGS += $(ASAN_FLAGS)
-LDFLAGS += $(LIBS)
 
 ALL_SRCS = $(wildcard *.c) $(wildcard */*.c) $(wildcard *.S) $(wildcard */*.S)
 ALL_OBJS = $(addsuffix .o,$(basename $(ALL_SRCS)))
 ALL_DEPS = $(addsuffix .d,$(basename $(ALL_SRCS)))
 
 # include tests and targets
-ALL_BINS = $(TARGETS) $(TESTS:%=tests/%)
+ALL_BINS = $(TARGETS)
 
 .PHONY: all
 all: $(ALL_BINS)

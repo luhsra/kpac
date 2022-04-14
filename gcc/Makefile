@@ -1,16 +1,17 @@
-TARGET_GCC = $(CROSS_COMPILE)$(CC)
+ARCH ?= $(shell uname -m)
+TARGET_GCC = $(CROSS_COMPILE)gcc
 
 PLUGIN = pac_sw_plugin.so
 SRC = main.cc
 
-PROLOGUE ?= asm/prologue.S
-EPILOGUE ?= asm/epilogue.S
+PROLOGUE ?= asm/$(ARCH)/prologue.S
+EPILOGUE ?= asm/$(ARCH)/epilogue.S
 
 PROLOGUE_IN = prologue.s
 EPILOGUE_IN = epilogue.s
 
 TEST = test
-MAP_DEVICE = map_device.o
+MAP_DEVICE = map_device
 
 # Plugins directory of GCC
 GCC_PLUGINS_DIR = $(shell $(TARGET_GCC) -print-file-name=plugin)
@@ -32,13 +33,16 @@ $(PROLOGUE_IN) $(EPILOGUE_IN):
 $(PLUGIN): $(SRC)
 	$(CXX) -shared $(CXXFLAGS) $^ -o $@
 
-$(TEST): $(TEST).c $(MAP_DEVICE) $(PLUGIN) $(PROLOGUE_IN) $(EPILOGUE_IN)
-	$(TARGET_GCC) $< $(MAP_DEVICE) \
+$(TEST): $(TEST).c $(MAP_DEVICE).o $(PLUGIN) $(PROLOGUE_IN) $(EPILOGUE_IN)
+	$(TARGET_GCC) $< $(MAP_DEVICE).o \
 		-fplugin=./$(PLUGIN) \
 		-fplugin-arg-pac_sw_plugin-prologue=$(PROLOGUE_IN) \
 		-fplugin-arg-pac_sw_plugin-epilogue=$(EPILOGUE_IN) \
 		-fplugin-arg-pac_sw_plugin-init-function=map_device \
 		-g -O0 -o $@
+
+$(MAP_DEVICE).o: $(MAP_DEVICE).c
+	$(TARGET_GCC) $< -c -o $@
 
 # testnostd: gcc_pac_plugin.so
 # 	$(TARGET_GCC) -E prologue.S > prologue.S.proc
@@ -52,4 +56,4 @@ $(TEST): $(TEST).c $(MAP_DEVICE) $(PLUGIN) $(PROLOGUE_IN) $(EPILOGUE_IN)
 # 	-g -O0 -o bin
 
 clean:
-	$(RM) $(PLUGIN) $(TEST) $(PROLOGUE_IN) $(EPILOGUE_IN)
+	$(RM) $(PLUGIN) $(TEST) $(PROLOGUE_IN) $(EPILOGUE_IN) $(MAP_DEVICE).o

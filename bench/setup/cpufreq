@@ -8,20 +8,27 @@ set -e
 echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor \
                        > /dev/null
 
+grep "" /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+
 ################################################################################
 # MODIFY TURBO SETTINGS
 ################################################################################
-cd /sys/devices/system/cpu/intel_pstate
-FREQ_PERCENTAGE=100
 
-# Disable turbo boost
-echo 1 > no_turbo
+if [ -d "/sys/devices/system/cpu/intel_pstate" ]; then
+    cd /sys/devices/system/cpu/intel_pstate
+    FREQ_PERCENTAGE=100
 
-# Set cpu P-State min and max to be equal
-echo $FREQ_PERCENTAGE > max_perf_pct
-echo $FREQ_PERCENTAGE > min_perf_pct
+    # Disable turbo boost
+    echo 1 > no_turbo
 
-cd "$CWD"
+    # Set cpu P-State min and max to be equal
+    echo $FREQ_PERCENTAGE > max_perf_pct
+    echo $FREQ_PERCENTAGE > min_perf_pct
+
+    grep "" /sys/devices/system/cpu/intel_pstate/*
+
+    cd "$CWD"
+fi
 
 ################################################################################
 # DISABLE HYPERTHREADING
@@ -32,16 +39,18 @@ cd "$CWD"
 
 # Cores 0-4, 1-5, 2-6 and 3-7 are siblings, hence I will disable half of them
 # for i in {4..7}; do
-    # echo -n 0 | sudo tee /sys/devices/system/cpu/cpu${i}/online > /dev/null;
+    # echo 0 > /sys/devices/system/cpu/cpu${i}/online;
 # done
 
 ################################################################################
 # CHECK
 ################################################################################
-grep "" /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
-grep "" /sys/devices/system/cpu/intel_pstate/*
 
 echo
 
 # Display CPU frequency for each core
-grep -E '^model name|^cpu MHz' /proc/cpuinfo
+if [ -f "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq" ]; then
+    grep "" /sys/devices/system/cpu/cpu*/cpufreq/cpuinfo_cur_freq
+else
+    grep -E '^model name|^cpu MHz' /proc/cpuinfo
+fi
