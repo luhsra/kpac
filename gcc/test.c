@@ -7,6 +7,7 @@
 
 void f2()
 {
+    int arr[50];
     int b = 6;
     b = b + 6;
     return;

@@ -17,12 +17,14 @@
 
 #define EXCLUDE_ATTR "pac_exclude"
 
-#define err(fmt, ...) fprintf(stderr, PLUGIN_NAME ": " fmt "\n", ##__VA_ARGS__)
+#define err(fmt, ...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #ifdef DEBUG
-#define dbg(fmt, ...) fprintf(stderr, PLUGIN_NAME ": " fmt "\n", ##__VA_ARGS__)
+#define dbg(fmt, ...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #else
 #define dbg(fmt, ...) ((void) 0)
 #endif
+
+#define CURRENT_FN_NAME() IDENTIFIER_POINTER(DECL_NAME(current_function_decl))
 
 int plugin_is_GPL_compatible;
 static struct plugin_info inst_plugin_info = {
@@ -35,6 +37,18 @@ enum { PROLOGUE, EPILOGUE };
 char *prologue_s = NULL;
 char *epilogue_s = NULL;
 char *init_function = NULL;
+
+enum {
+    SIGN_SCOPE_STD,
+    SIGN_SCOPE_ALL,
+};
+
+int pac_sign_scope = SIGN_SCOPE_STD;
+
+struct {
+    int total;
+    int instrumented;
+} inst_stat;
 
 extern gcc::context *g;
 
@@ -111,7 +125,6 @@ pass_init_pac init_pass = pass_init_pac(g);
 static void register_attributes(void *event_data, void *data)
 {
     register_attribute(&exclude_attr);
-    // dbg("Registered attribute '%s'.", EXCLUDE_ATTR);
 }
 
 // Attach initialization function to main
@@ -138,10 +151,24 @@ static unsigned int execute_init_pac(void)
     call = gimple_build_call(function, 0);
     gsi_insert_before(&gsi, call, GSI_NEW_STMT);
 
-    dbg("Attached %s to %s.", init_function, fn_name);
+    dbg(PLUGIN_NAME ": Attached %s to %s.\n", init_function, fn_name);
 
     return 0;
 }
+
+#ifdef GCC_AARCH64_H
+static bool aarch64_signing_required(void)
+{
+    /* This function should only be called after frame laid out. */
+    gcc_assert(cfun->machine->frame.laid_out);
+
+    /* If signing scope is standard, we only sign a leaf function
+       if its LR is pushed onto stack. */
+    return (pac_sign_scope == SIGN_SCOPE_ALL ||
+            (pac_sign_scope == SIGN_SCOPE_STD &&
+             known_ge(cfun->machine->frame.reg_offset[LR_REGNUM], 0)));
+}
+#endif
 
 // Recursively check for existence of protected declarations (arrays).
 static bool has_protected_decls(tree decl_initial)
@@ -164,16 +191,59 @@ static bool has_protected_decls(tree decl_initial)
     return false;
 }
 
-// Take a string and expand it as ASM code at loc in prologue/epilogue.
-static void expand_asm(tree string, int vol, rtx_insn *loc, int position)
+static bool signing_required(void)
+{
+    tree attrlist = DECL_ATTRIBUTES(current_function_decl);
+    tree attr = lookup_attribute(EXCLUDE_ATTR, attrlist);
+
+    // Do not instrument init-related functions
+    if (init_function && (strcmp(CURRENT_FN_NAME(), init_function) == 0 ||
+                          strcmp(CURRENT_FN_NAME(), "main") == 0))
+        return false;
+
+    // Do not instrument functions with the exclude attribute
+    if (attr != NULL_TREE)
+        return false;
+
+    // Omit function if stack overflow is unlikely
+    if (!cfun->calls_alloca &&
+        !has_protected_decls(DECL_INITIAL(current_function_decl)))
+        return false;
+
+    /* Turn return address signing off in any function that uses
+       __builtin_eh_return.  The address passed to __builtin_eh_return
+       is not signed so either it has to be signed (with original sp)
+       or the code path that uses it has to avoid authenticating it.
+       Currently eh return introduces a return to anywhere gadget, no
+       matter what we do here since it uses ret with user provided
+       address. An ideal fix for that is to use indirect branch which
+       can be protected with BTI j (to some extent).  */
+    if (crtl->calls_eh_return)
+        return false;
+
+#ifdef GCC_AARCH64_H
+    if (!aarch64_signing_required())
+        return false;
+#endif
+
+    return true;
+}
+
+/* Generate RTL for an asm statement (explicit assembler code).
+   STRING is a STRING_CST node containing the assembler code text,
+   or an ADDR_EXPR containing a STRING_CST.  VOL nonzero means the
+   insn is volatile; don't optimize it.  */
+static rtx expand_asm_loc(tree string, int vol, location_t locus)
 {
     rtx body;
 
-    body = gen_rtx_ASM_INPUT_loc(VOIDmode, ggc_strdup(TREE_STRING_POINTER(string)), INSN_LOCATION(loc));
+    body = gen_rtx_ASM_INPUT_loc(VOIDmode,
+                                 ggc_strdup(TREE_STRING_POINTER(string)),
+                                 locus);
 
     MEM_VOLATILE_P(body) = vol;
 
-    // Non-empty basic ASM implicitly clobbers memory.
+    /* Non-empty basic ASM implicitly clobbers memory.  */
     if (TREE_STRING_LENGTH(string) != 0) {
         rtx asm_op, clob;
         unsigned i, nclobbers;
@@ -187,7 +257,9 @@ static void expand_asm(tree string, int vol, rtx_insn *loc, int position)
         clobber_rvec.safe_push(clob);
 
         if (targetm.md_asm_adjust)
-            targetm.md_asm_adjust(output_rvec, input_rvec, constraints, clobber_rvec, clobbered_regs);
+            targetm.md_asm_adjust(output_rvec, input_rvec,
+                                  constraints, clobber_rvec,
+                                  clobbered_regs);
 
         asm_op = body;
         nclobbers = clobber_rvec.length();
@@ -198,16 +270,7 @@ static void expand_asm(tree string, int vol, rtx_insn *loc, int position)
             XVECEXP(body, 0, i + 1) = gen_rtx_CLOBBER(VOIDmode, clobber_rvec[i]);
     }
 
-    switch (position) {
-    case PROLOGUE:
-        emit_insn_before(body, get_first_nonnote_insn());
-        break;
-    case EPILOGUE:
-        emit_insn_before(body, PREV_INSN(get_last_nonnote_insn()));
-        break;
-    default:
-        abort();
-    }
+    return body;
 }
 
 static void insert_prologue(void)
@@ -215,7 +278,8 @@ static void insert_prologue(void)
     tree string = build_string(strlen(prologue_s), prologue_s);
     basic_block bb = ENTRY_BLOCK_PTR_FOR_FN(cfun)->next_bb;
 
-    expand_asm(string, 1, BB_END(bb), PROLOGUE);
+    rtx body = expand_asm_loc(string, 1, prologue_location);
+    emit_insn_before(body, get_first_nonnote_insn());
 }
 
 static void insert_epilogue(void)
@@ -223,42 +287,26 @@ static void insert_epilogue(void)
     tree string = build_string(strlen(epilogue_s), epilogue_s);
     basic_block bb = ENTRY_BLOCK_PTR_FOR_FN(cfun)->next_bb;
 
-    expand_asm(string, 1, BB_END(bb), EPILOGUE);
+    rtx body = expand_asm_loc(string, 1, epilogue_location);
+    emit_insn_before(body, PREV_INSN(get_last_nonnote_insn()));
 }
 
 // For each function lookup attributes and attach instrumentation.
 static unsigned int execute_inst_pac(void)
 {
-    const char *fn_name = IDENTIFIER_POINTER(DECL_NAME(current_function_decl));
+    inst_stat.total++;
 
-    tree attrlist = DECL_ATTRIBUTES(current_function_decl);
-    tree attr = lookup_attribute(EXCLUDE_ATTR, attrlist);
-
-    if (init_function && (strcmp(fn_name, init_function) == 0 ||
-                          strcmp(fn_name, "main") == 0)) {
-        dbg("%s: Excluded due to init function.", fn_name);
+    if (!signing_required())
         return 0;
-    }
-
-    // Do not instrument the function if the exclude attribute is present
-    if (attr != NULL_TREE) {
-        dbg("%s: Excluded via attribute.", fn_name);
-        return 0;
-    }
-
-    // Do not instrument if no stack overflow is possible
-    if (!has_protected_decls(DECL_INITIAL(current_function_decl))) {
-        dbg("%s: No protected declarations.", fn_name);
-        return 0;
-    }
 
     if (prologue_s)
         insert_prologue();
     if (epilogue_s)
         insert_epilogue();
 
-    dbg("%s: Successfully instrumented.", fn_name);
+    dbg(PLUGIN_NAME ": %s instrumented.\n", CURRENT_FN_NAME());
 
+    inst_stat.instrumented++;
     return 0;
 }
 
@@ -268,7 +316,7 @@ static char *read_code(const char *file)
     size_t fsize;
     FILE *f = fopen(file, "r");
     if (!f) {
-        err("Cannot open %s.", file);
+        err(PLUGIN_NAME ": Unable to open %s.\n", file);
         return NULL;
     }
 
@@ -278,7 +326,7 @@ static char *read_code(const char *file)
 
     code = (char *) xmalloc(fsize+1);
     if (fread(code, 1, fsize, f) != fsize) {
-        err("Unable to read %s.", file);
+        err(PLUGIN_NAME ": Unable to read %s.\n", file);
         free(f);
         fclose(f);
         return NULL;
@@ -286,6 +334,12 @@ static char *read_code(const char *file)
 
     code[fsize] = 0;
     return code;
+}
+
+static void inst_stat_print(void *event_data, void *data)
+{
+    dbg(PLUGIN_NAME ": %s: %d/%d functions instrumented.\n",
+        main_input_basename, inst_stat.instrumented, inst_stat.total);
 }
 
 int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
@@ -305,28 +359,28 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
     };
 
     if (strncmp(PLUGIN_GCC_REQ, ver->basever, sizeof(PLUGIN_GCC_REQ))) {
-        err("GCC >%s required.", PLUGIN_GCC_REQ);
+        err(PLUGIN_NAME ": GCC %s required.\n", PLUGIN_GCC_REQ);
         return 1;
     }
 
     for (int i = 0; i < info->argc; i++) {
-        if (strcmp(info->argv[i].key, "prologue") == 0)
+        if (!strcmp(info->argv[i].key, "prologue"))
             prologue_s = read_code(info->argv[i].value);
-        else if (strcmp(info->argv[i].key, "epilogue") == 0)
+        else if (!strcmp(info->argv[i].key, "epilogue"))
             epilogue_s = read_code(info->argv[i].value);
-        else if (strcmp(info->argv[i].key, "init-function") == 0)
+        else if (!strcmp(info->argv[i].key, "init-function"))
             init_function = info->argv[i].value;
+        else if (!strcmp(info->argv[i].key, "sign-scope")) {
+            if (!strcmp(info->argv[i].value, "all"))
+                pac_sign_scope = SIGN_SCOPE_ALL;
+            else if (!strcmp(info->argv[i].value, "standard"))
+                pac_sign_scope = SIGN_SCOPE_STD;
+            else {
+                err(PLUGIN_NAME ": Invalid sign scope %s.\n", info->argv[i].value);
+                return 1;
+            }
+        }
     }
-
-    // if (!prologue_s) {
-    //     err("Unable fetch prologue source file.");
-    //     return 1;
-    // }
-
-    // if (!epilogue_s) {
-    //     err("Unable fetch epilogue source file.");
-    //     return 1;
-    // }
 
     // Register info about this plugin.
     register_callback(PLUGIN_NAME, PLUGIN_INFO, NULL, &inst_plugin_info);
@@ -336,6 +390,8 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
         register_callback(PLUGIN_NAME, PLUGIN_ATTRIBUTES, register_attributes, NULL);
         // Add our pass into the pass manager.
         register_callback(PLUGIN_NAME, PLUGIN_PASS_MANAGER_SETUP, NULL, &pass_inst);
+        // Print statistics at the end.
+        register_callback(PLUGIN_NAME, PLUGIN_FINISH_UNIT, inst_stat_print, NULL);
     }
 
     if (init_function)
