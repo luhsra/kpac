@@ -10,6 +10,11 @@ INST_FLAGS    = -fplugin-arg-pac_sw_plugin-prologue=$(PROLOGUE_IN) \
 PLUGIN_FLAGS  = -fplugin=./$(PLUGIN) \
 		-fplugin-arg-pac_sw_plugin-init-function=map_device
 
+# Dump inst stats if specified
+ifdef DUMP_FILE
+PLUGIN_FLAGS += -fplugin-arg-pac_sw_plugin-dump-stats=$(DUMP_FILE)
+endif
+
 INIT_OBJ = ../gcc/map_device.o
 
 CFLAGS = -O0
@@ -38,4 +43,4 @@ $(RUNNER): $(RUNNER).c
 
 .PHONY: clean
 clean:
-	$(RM) $(BIN_BARE) $(BIN_PAC) $(RUNNER)
+	$(RM) $(BIN_BARE) $(BIN_PAC) $(RUNNER) $(DUMP_FILE)
