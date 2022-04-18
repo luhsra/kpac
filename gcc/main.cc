@@ -34,21 +34,22 @@ static struct plugin_info inst_plugin_info = {
 
 enum { PROLOGUE, EPILOGUE };
 
-char *prologue_s = NULL;
-char *epilogue_s = NULL;
-char *init_function = NULL;
+static const char *prologue_s = NULL;
+static const char *epilogue_s = NULL;
+static const char *init_function = NULL;
 
 enum {
     SIGN_SCOPE_STD,
     SIGN_SCOPE_ALL,
 };
 
-int pac_sign_scope = SIGN_SCOPE_STD;
+static int pac_sign_scope = SIGN_SCOPE_STD;
 
-struct {
+static struct {
     int total;
     int instrumented;
-} inst_stat;
+} inst_stat = { 0, 0 };
+static const char *inst_stat_file = NULL;
 
 extern gcc::context *g;
 
@@ -92,7 +93,7 @@ public:
 };
 
 // Instantiate a new instrumentation RTL pass.
-pass_inst_pac ins_pass = pass_inst_pac(g);
+static pass_inst_pac inst_pass = pass_inst_pac(g);
 
 // Metadata for the initialization pass working on GIMPLE.  Registered only if
 // the init function is provided.  Attaches the init function to main.
@@ -119,7 +120,7 @@ public:
 };
 
 // Instantiate a new initialization pass.
-pass_init_pac init_pass = pass_init_pac(g);
+static pass_init_pac init_pass = pass_init_pac(g);
 
 // Plugin callback called during attribute registration.
 static void register_attributes(void *event_data, void *data)
@@ -276,8 +277,6 @@ static rtx expand_asm_loc(tree string, int vol, location_t locus)
 static void insert_prologue(void)
 {
     tree string = build_string(strlen(prologue_s), prologue_s);
-    basic_block bb = ENTRY_BLOCK_PTR_FOR_FN(cfun)->next_bb;
-
     rtx body = expand_asm_loc(string, 1, prologue_location);
     emit_insn_before(body, get_first_nonnote_insn());
 }
@@ -285,8 +284,6 @@ static void insert_prologue(void)
 static void insert_epilogue(void)
 {
     tree string = build_string(strlen(epilogue_s), epilogue_s);
-    basic_block bb = ENTRY_BLOCK_PTR_FOR_FN(cfun)->next_bb;
-
     rtx body = expand_asm_loc(string, 1, epilogue_location);
     emit_insn_before(body, PREV_INSN(get_last_nonnote_insn()));
 }
@@ -310,42 +307,52 @@ static unsigned int execute_inst_pac(void)
     return 0;
 }
 
-static char *read_code(const char *file)
+static int read_code(const char *file, const char **code)
 {
-    char *code;
     size_t fsize;
+    char *tmp = NULL;
     FILE *f = fopen(file, "r");
-    if (!f) {
-        err(PLUGIN_NAME ": Unable to open %s.\n", file);
-        return NULL;
-    }
+    if (!f)
+        return 1;
 
     fseek(f, 0, SEEK_END);
     fsize = ftell(f);
     rewind(f);
 
-    code = (char *) xmalloc(fsize+1);
-    if (fread(code, 1, fsize, f) != fsize) {
-        err(PLUGIN_NAME ": Unable to read %s.\n", file);
-        free(f);
+    tmp = (char *) xmalloc(fsize+1);
+    if (fread(tmp, 1, fsize, f) != fsize) {
+        free(tmp);
         fclose(f);
-        return NULL;
+        return 1;
     }
 
-    code[fsize] = 0;
-    return code;
+    tmp[fsize] = 0;
+    *code = tmp;
+    return 0;
 }
 
 static void inst_stat_print(void *event_data, void *data)
 {
-    dbg(PLUGIN_NAME ": %s: %d/%d functions instrumented.\n",
-        main_input_basename, inst_stat.instrumented, inst_stat.total);
+    FILE *f;
+    if (!inst_stat_file)
+        return;
+
+    f = fopen(inst_stat_file, "a");
+    if (!f) {
+        err(PLUGIN_NAME ": Unable to open %s.\n", inst_stat_file);
+        return;
+    }
+
+    fprintf(f, "%s,%d,%d\n",
+            main_input_filename, inst_stat.instrumented, inst_stat.total);
+
+    fclose(f);
 }
 
 int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
 {
     struct register_pass_info pass_inst = {
-        .pass = &ins_pass,
+        .pass = &inst_pass,
         .reference_pass_name = "*free_cfg", // Insert after the first instance
         .ref_pass_instance_number = 1,      // of CFG cleanup pass.
         .pos_op = PASS_POS_INSERT_AFTER,
@@ -364,21 +371,35 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
     }
 
     for (int i = 0; i < info->argc; i++) {
-        if (!strcmp(info->argv[i].key, "prologue"))
-            prologue_s = read_code(info->argv[i].value);
-        else if (!strcmp(info->argv[i].key, "epilogue"))
-            epilogue_s = read_code(info->argv[i].value);
-        else if (!strcmp(info->argv[i].key, "init-function"))
-            init_function = info->argv[i].value;
-        else if (!strcmp(info->argv[i].key, "sign-scope")) {
-            if (!strcmp(info->argv[i].value, "all"))
+        const char *key = info->argv[i].key;
+        const char *value = info->argv[i].value;
+
+        if (!strcmp(key, "sign-scope")) {
+            if (!strcmp(value, "all"))
                 pac_sign_scope = SIGN_SCOPE_ALL;
-            else if (!strcmp(info->argv[i].value, "standard"))
+            else if (!strcmp(value, "standard"))
                 pac_sign_scope = SIGN_SCOPE_STD;
             else {
-                err(PLUGIN_NAME ": Invalid sign scope %s.\n", info->argv[i].value);
+                err(PLUGIN_NAME ": Invalid sign scope %s.\n", value);
                 return 1;
             }
+        } else if (!strcmp(key, "prologue")) {
+            if (read_code(value, &prologue_s)) {
+                err(PLUGIN_NAME ": Unable to read %s.\n", value);
+                return 1;
+            }
+        } else if (!strcmp(key, "epilogue")) {
+            if (read_code(value, &epilogue_s)) {
+                err(PLUGIN_NAME ": Unable to read %s.\n", value);
+                return 1;
+            }
+        } else if (!strcmp(key, "init-function")) {
+            init_function = value;
+        } else if (!strcmp(key, "dump-stats")) {
+            inst_stat_file = value;
+        } else {
+            err(PLUGIN_NAME ": Unknown argument %s.\n", key);
+            return 1;
         }
     }
 

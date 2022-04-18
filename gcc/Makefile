@@ -17,7 +17,7 @@ MAP_DEVICE = map_device
 GCC_PLUGINS_DIR = $(shell $(TARGET_GCC) -print-file-name=plugin)
 
 # GCC CPP flags (we need pic and no-rtti)
-CXXFLAGS += -g -I$(GCC_PLUGINS_DIR)/include -fPIC -fno-rtti -DDEBUG
+CXXFLAGS += -g -I$(GCC_PLUGINS_DIR)/include -fPIC -fno-rtti -DDEBUG -Wall -O2
 
 .PHONY: all clean
 
