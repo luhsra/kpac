@@ -1,0 +1,81 @@
+#+STARTUP: content
+#+PROPERTY: header-args:python :session *PAC-SW Notebook*
+
+* Init
+#+begin_src python :results none
+  import pandas as pd
+  from os import path
+
+  from data import *
+
+  build = 'aarch64'
+  res = 'results/arm-3r'
+
+  pac = Measurement(path.join(res, "pac.csv"))
+  bare= Measurement(path.join(res, "bare.csv"))
+
+  b = Build(path.join(build, "inst.csv"),
+            path.join(build, "auths.csv"))
+  m = Analysis(bare, pac, b)
+#+end_src
+
+* Functions
+
+#+begin_src python :results value raw
+  pd2org(b.df)
+#+end_src
+
+* Raw
+** PA enabled
+#+begin_src python :results value raw
+  pd2org(pac.df)
+#+end_src
+
+
+** PA disabled
+#+begin_src python :results value raw
+  pd2org(bare.df)
+#+end_src
+
+* Relative
+#+begin_src python :results none
+  pac_rel = pac.relative()
+  bare_rel = bare.relative()
+#+end_src
+
+** PA enabled
+#+begin_src python :results value raw
+  pd2org(pac_rel)
+#+end_src
+
+#+begin_src python :results output
+  print('Mean: {} %'.format(pac_rel['rstd'].mean() * 100))
+  print('Min: {} %'.format(pac_rel['rstd'].min() * 100))
+  print('Max: {} %'.format(pac_rel['rstd'].max() * 100))
+#+end_src
+
+** PA disabled
+#+begin_src python :results value raw
+  pd2org(bare_rel)
+#+end_src
+
+#+begin_src python :results output
+  print('Mean: {} %'.format(bare_rel['rstd'].mean() * 100))
+  print('Min: {} %'.format(bare_rel['rstd'].min() * 100))
+  print('Max: {} %'.format(bare_rel['rstd'].max() * 100))
+#+end_src
+
+* Overhead
+#+begin_src python :results value raw
+  oh = m.overhead()
+  aut_s = m.aut_per_sec()
+
+  pd2org(pd.concat([oh, aut_s, b.df], axis=1))
+#+end_src
+
+* Authentication cost
+#+begin_src python :results value raw
+  cost = m.cycles(1.8e9)
+  
+  pd2org(cost)
+#+end_src
