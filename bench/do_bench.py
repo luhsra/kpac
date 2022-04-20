@@ -23,7 +23,7 @@ def run(path, n):
     std = diff.std()
     masked = np.ma.masked_outside(diff, mean-2*std, mean+2*std)
     masked_count = np.ma.count_masked(masked)
-    print(": %.9f (%.9f); %d masked" % (mean, std, masked_count))
+    print(": %.9f (%.1f %%); %d masked" % (mean, std/mean*100, masked_count))
 
     return masked
 
