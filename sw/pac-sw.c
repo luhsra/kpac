@@ -2,14 +2,26 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <signal.h>
 
 #include "pac-sw.h"
 #include "qarma.h"
 
 #define NUM_ROUNDS 1
 
+static volatile int done = 0;
+
+void sigint_handler()
+{
+    done = 1;
+}
+
 int main(void)
 {
+    struct {
+        unsigned int pac, aut;
+    } counter = { 0, 0 };
+
     qkey_t w0 = 0, k0 = 0;
 
     int fd = open(pa_path, O_RDWR | O_CREAT, 0666);
@@ -29,7 +41,9 @@ int main(void)
         return 1;
     }
 
-    while (1) {
+    signal(SIGINT, sigint_handler);
+
+    while (!done) {
         uint64_t cipher, plain, tweak, orig;
         uint64_t state;
 
@@ -39,10 +53,11 @@ int main(void)
             plain = area[PAC_PLAIN] & PLAIN_MASK;
             tweak = area[PAC_TWEAK];
 
-            cipher = qarma64_enc(plain, tweak, w0, k0, NUM_ROUNDS);
+            cipher = 0x1111111111111111;// qarma64_enc(plain, tweak, w0, k0, NUM_ROUNDS);
             cipher = (plain & PLAIN_MASK) | (cipher & CIPHER_MASK);
 
-            printf("PAC: (%016lX, %016lX) -> %016lX\n", plain, tweak, cipher);
+            /* printf("PAC: (%016lX, %016lX) -> %016lX\n", plain, tweak, cipher); */
+            counter.pac++;
 
             area[PAC_CIPH] = cipher;
             state = DEV_STANDBY;
@@ -54,17 +69,21 @@ int main(void)
             tweak = area[PAC_TWEAK];
 
             plain = orig & PLAIN_MASK;
-            cipher = qarma64_enc(plain, tweak, w0, k0, NUM_ROUNDS);
+            cipher = 0x1111111111111111;//qarma64_enc(plain, tweak, w0, k0, NUM_ROUNDS);
             if ((orig & CIPHER_MASK) != (cipher & CIPHER_MASK))
                 plain |= (1UL << 63);
 
-            printf("AUT: (%016lX, %016lX) -> %016lX\n", orig, tweak, plain);
+            /* printf("AUT: (%016lX, %016lX) -> %016lX\n", orig, tweak, plain); */
+            counter.aut++;
 
             area[PAC_PLAIN] = plain;
             state = DEV_STANDBY;
             __atomic_store(area + PAC_STATE, &state, __ATOMIC_RELEASE);
             break;
         }
-
     }
+
+    printf("pac: %u\naut: %u\n", counter.pac, counter.aut);
+
+    return 0;
 }

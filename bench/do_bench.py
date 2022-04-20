@@ -54,7 +54,7 @@ if __name__ == '__main__':
         bare[name] = run(os.sep.join([b, 'bare']), args.n)
         pac[name] = run(os.sep.join([b, 'pac']), args.n)
 
-    FIELDS = ['Benchmark', 'Mean', 'SD', 'Min', 'Max']
+    FIELDS = ['name', 'mean', 'std', 'min', 'max']
 
     # Write the results
     os.makedirs(args.dest, exist_ok=True)

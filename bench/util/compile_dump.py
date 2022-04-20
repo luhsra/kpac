@@ -31,6 +31,6 @@ if __name__ == '__main__':
             stat[name] = [sum(x) for x in zip(stat[name], v)]
 
     writer = csv.writer(sys.stdout)
-    writer.writerow(['Benchmark', 'Instrumented', 'Total'])
+    writer.writerow(['name', 'inst', 'total'])
     for k, v in stat.items():
         writer.writerow([k] + v)
