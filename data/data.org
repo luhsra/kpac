@@ -9,18 +9,17 @@
   from data import *
 
   build = 'aarch64'
-  res = 'results/arm-3r'
+  res = 'results/aarch64'
 
   pac = Measurement(path.join(res, "pac.csv"))
-  bare= Measurement(path.join(res, "bare.csv"))
+  nopac= Measurement(path.join(res, "nopac.csv"))
 
   b = Build(path.join(build, "inst.csv"),
             path.join(build, "auths.csv"))
-  m = Analysis(bare, pac, b)
+  m = Analysis(nopac, pac, b)
 #+end_src
 
 * Functions
-
 #+begin_src python :results value raw
   pd2org(b.df)
 #+end_src
@@ -34,13 +33,13 @@
 
 ** PA disabled
 #+begin_src python :results value raw
-  pd2org(bare.df)
+  pd2org(nopac.df)
 #+end_src
 
 * Relative
 #+begin_src python :results none
   pac_rel = pac.relative()
-  bare_rel = bare.relative()
+  nopac_rel = nopac.relative()
 #+end_src
 
 ** PA enabled
@@ -56,13 +55,13 @@
 
 ** PA disabled
 #+begin_src python :results value raw
-  pd2org(bare_rel)
+  pd2org(nopac_rel)
 #+end_src
 
 #+begin_src python :results output
-  print('Mean: {} %'.format(bare_rel['rstd'].mean() * 100))
-  print('Min: {} %'.format(bare_rel['rstd'].min() * 100))
-  print('Max: {} %'.format(bare_rel['rstd'].max() * 100))
+  print('Mean: {} %'.format(nopac_rel['rstd'].mean() * 100))
+  print('Min: {} %'.format(nopac_rel['rstd'].min() * 100))
+  print('Max: {} %'.format(nopac_rel['rstd'].max() * 100))
 #+end_src
 
 * Overhead

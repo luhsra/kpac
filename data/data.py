@@ -32,15 +32,15 @@ class Build:
         return self.df[key]
 
 class Analysis:
-    def __init__(self, bare, pac, build):
-        self.bare = bare
+    def __init__(self, nopac, pac, build):
+        self.nopac = nopac
         self.pac = pac
         self.b = build
 
     def overhead(self):
         oh = pd.DataFrame()
-        oh['overhead'] = (self.pac['mean'] - self.bare['mean']) \
-            / self.bare['mean'] * 100
+        oh['overhead'] = (self.pac['mean'] - self.nopac['mean']) \
+            / self.nopac['mean'] * 100
 
         return oh
 
@@ -52,7 +52,7 @@ class Analysis:
 
     def cycles(self, clock):
         cost = pd.DataFrame()
-        slowdown = self.pac['mean']-self.bare['mean']
+        slowdown = self.pac['mean']-self.nopac['mean']
         cost['cycles'] = slowdown/self.b['auths'] * clock
 
         return cost
