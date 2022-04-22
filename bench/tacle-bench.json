@@ -1,0 +1,31 @@
+{
+  "ntimes": 1000,
+  "warmup": 100,
+  "do_run": "./a.out",
+  "do_build": "gcc *.c $PAC_MAPPER $PAC_FLAGS",
+  "benchmarks": [
+    { "path": "tacle-bench/bench/sequential/ammunition" },
+    { "path": "tacle-bench/bench/kernel/bitcount" },
+    { "path": "tacle-bench/bench/sequential/fmref" },
+    { "path": "tacle-bench/bench/sequential/huff_dec" },
+    { "path": "tacle-bench/bench/kernel/isqrt" },
+    { "path": "tacle-bench/bench/sequential/mpeg2" },
+    { "path": "tacle-bench/bench/sequential/rijndael_dec" },
+    { "path": "tacle-bench/bench/sequential/cjpeg_wrbmp" },
+    { "path": "tacle-bench/bench/sequential/gsm_dec" },
+    { "path": "tacle-bench/bench/sequential/huff_enc" },
+    { "path": "tacle-bench/bench/kernel/lms" },
+    { "path": "tacle-bench/bench/kernel/md5" },
+    { "path": "tacle-bench/bench/sequential/ndes" },
+    { "path": "tacle-bench/bench/sequential/rijndael_enc" },
+    { "path": "tacle-bench/bench/kernel/sha" },
+    { "path": "tacle-bench/bench/sequential/audiobeam" },
+    { "path": "tacle-bench/bench/kernel/filterbank" },
+    { "path": "tacle-bench/bench/sequential/gsm_enc" },
+    { "path": "tacle-bench/bench/kernel/insertsort" },
+    { "path": "tacle-bench/bench/kernel/ludcmp" },
+    { "path": "tacle-bench/bench/kernel/minver" },
+    { "path": "tacle-bench/bench/app/powerwindow" },
+    { "path": "tacle-bench/bench/sequential/susan" }
+  ]
+}
