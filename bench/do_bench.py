@@ -56,7 +56,7 @@ class Benchmark:
         std = diff.std()/mean*100
         masked = np.ma.masked_outside(diff, mean-2*std, mean+2*std)
         masked_count = np.ma.count_masked(masked)
-        sys.stdout.write(f'{self.name}: {mean:#.9f} ({std:#.3f}); {masked_count} outliers rejected\n')
+        sys.stdout.write(f'{self.name}: {mean:#.9f} ({std:#.3f} %); {masked_count} outliers rejected\n')
 
         return masked
 
