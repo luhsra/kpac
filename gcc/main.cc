@@ -152,7 +152,7 @@ static unsigned int execute_init_pac(void)
     call = gimple_build_call(function, 0);
     gsi_insert_before(&gsi, call, GSI_NEW_STMT);
 
-    dbg(PLUGIN_NAME ": Attached %s to %s.\n", init_function, fn_name);
+    dbg(PLUGIN_NAME ": %s: Attached %s to %s.\n", main_input_filename, init_function, fn_name);
 
     return 0;
 }
@@ -301,7 +301,7 @@ static unsigned int execute_inst_pac(void)
     if (epilogue_s)
         insert_epilogue();
 
-    dbg(PLUGIN_NAME ": %s instrumented.\n", CURRENT_FN_NAME());
+    dbg(PLUGIN_NAME ": %s: %s instrumented.\n", main_input_filename, CURRENT_FN_NAME());
 
     inst_stat.instrumented++;
     return 0;
