@@ -393,9 +393,9 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
                 err(PLUGIN_NAME ": Unable to read %s.\n", value);
                 return 1;
             }
-        } else if (!strcmp(key, "init-function")) {
+        } else if (!strcmp(key, "init-func")) {
             init_function = value;
-        } else if (!strcmp(key, "dump-stats")) {
+        } else if (!strcmp(key, "inst-dump")) {
             inst_stat_file = value;
         } else {
             err(PLUGIN_NAME ": Unknown argument %s.\n", key);

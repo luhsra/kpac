@@ -38,7 +38,7 @@ $(TEST): $(TEST).c $(MAP_DEVICE).o $(PLUGIN) $(PROLOGUE_IN) $(EPILOGUE_IN)
 		-fplugin=./$(PLUGIN) \
 		-fplugin-arg-pac_sw_plugin-prologue=$(PROLOGUE_IN) \
 		-fplugin-arg-pac_sw_plugin-epilogue=$(EPILOGUE_IN) \
-		-fplugin-arg-pac_sw_plugin-init-function=map_device \
+		-fplugin-arg-pac_sw_plugin-init-func=map_device \
 		-g -O0 -o $@
 
 $(MAP_DEVICE).o: $(MAP_DEVICE).c
