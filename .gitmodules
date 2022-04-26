@@ -1,4 +1,9 @@
 [submodule "bench/tacle-bench"]
 	path = bench/tacle-bench
 	url = https://github.com/tacle/tacle-bench.git
-	ignore = untracked
+	ignore = dirty
+
+[submodule "bench/cortexsuite"]
+	path = bench/cortexsuite
+	url = https://bitbucket.org/taylor-bsg/cortexsuite.git
+	ignore = dirty

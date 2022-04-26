@@ -1,0 +1,40 @@
+warmup = 5
+samples = 50
+do_build = "make clean && make compile"
+do_run = "make run-medium"
+
+[benchmarks.liblinear]
+path = "cortexsuite/cortex/liblinear"
+
+[benchmarks.kmeans]
+path = "cortexsuite/cortex/clustering/kmeans"
+
+[benchmarks.spectral]
+path = "cortexsuite/cortex/clustering/spectral"
+
+# Watch out - auths are different every run
+[benchmarks.lda]
+path = "cortexsuite/cortex/lda"
+
+[benchmarks.motion-estimation]
+path = "cortexsuite/cortex/motion-estimation"
+
+[benchmarks.pca]
+path = "cortexsuite/cortex/pca"
+
+[benchmarks.rbm]
+path = "cortexsuite/cortex/rbm"
+
+[benchmarks.sphinx]
+path = "cortexsuite/cortex/sphinx"
+
+[benchmarks.srr]
+path = "cortexsuite/cortex/srr"
+
+[benchmarks.svd3]
+path = "cortexsuite/cortex/svd3"
+
+# TODO: segfaults in malloc
+# [benchmarks.cnn]
+# path = "cortexsuite/cortex/cnn"
+# do_run = "make run"
