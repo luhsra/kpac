@@ -22,18 +22,16 @@ PAC_SW_BIN = os.path.join(PAC_SW_DIR, 'pac-sw')
 # Plugin artefacts
 PLUGIN_DIR	= os.path.abspath('../gcc')
 PLUGIN_DLL	= os.path.join(PLUGIN_DIR, 'pac_sw_plugin.so')
-PAC_PROLOGUE	= os.path.join(PLUGIN_DIR, 'prologue.s')
-PAC_EPILOGUE    = os.path.join(PLUGIN_DIR, 'epilogue.s')
 PAC_OBJ		= os.path.join(PLUGIN_DIR, 'map_device.o')
 
 # Plugin flags for non-PAC builds
-PAC_ARGS_BASE = { 'init-func': 'map_device' } # Include the init function for
-                                              # fair measurements
+PAC_ARGS_BASE = { 'init-func': 'map_device', # Include the init function for
+                  'sign-scope': 'nil' }      # fair measurements
 
 # Plugin flags for PAC builds
-PAC_ARGS_INST = { **PAC_ARGS_BASE,
-                  'prologue': PAC_PROLOGUE,
-                  'epilogue': PAC_EPILOGUE }
+PAC_ARGS_INST = { 'init-func': 'map_device',
+                  'sign-scope': 'std' }
+
 
 verbose = False
 
@@ -138,7 +136,10 @@ class Suite:
 
             # Set relevant environment variables
             os.environ['PAC_OBJ'] = PAC_OBJ
-            os.environ['PAC_FLAGS'] = plugin_args(PLUGIN_DLL, args)
+
+            pac_flags = os.environ.get('PAC_FLAGS', '') + \
+                ' ' + plugin_args(PLUGIN_DLL, args)
+            os.environ['PAC_FLAGS'] = pac_flags
 
             for b in self.benchmarks:
                 stat[b.name] = [0, 0]

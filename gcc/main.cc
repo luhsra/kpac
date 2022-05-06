@@ -9,6 +9,9 @@
 #include <emit-rtl.h>
 #include <gimple.h>
 #include <gimple-iterator.h>
+#include <diagnostic.h>
+
+#include "asm.h"
 
 #define PLUGIN_NAME "pac_sw_plugin"
 #define PLUGIN_VERSION "0.1"
@@ -34,13 +37,13 @@ static struct plugin_info inst_plugin_info = {
 
 enum { PROLOGUE, EPILOGUE };
 
-static const char *prologue_s = NULL;
-static const char *epilogue_s = NULL;
 static const char *init_function = NULL;
 
 enum {
-    SIGN_SCOPE_STD,
-    SIGN_SCOPE_ALL,
+    SIGN_SCOPE_NIL = 0,
+    SIGN_SCOPE_STD, /* exclude functions without protected declarations */
+    SIGN_SCOPE_EXT, /* like std but include leaf functions on aarch64 */
+    SIGN_SCOPE_ALL, /* authenticate everything */
 };
 
 static int pac_sign_scope = SIGN_SCOPE_STD;
@@ -165,7 +168,7 @@ static bool aarch64_signing_required(void)
 
     /* If signing scope is standard, we only sign a leaf function
        if its LR is pushed onto stack. */
-    return (pac_sign_scope == SIGN_SCOPE_ALL ||
+    return (pac_sign_scope >= SIGN_SCOPE_EXT ||
             (pac_sign_scope == SIGN_SCOPE_STD &&
              known_ge(cfun->machine->frame.reg_offset[LR_REGNUM], 0)));
 }
@@ -174,6 +177,9 @@ static bool aarch64_signing_required(void)
 // Recursively check for existence of protected declarations (arrays).
 static bool has_protected_decls(tree decl_initial)
 {
+    if (cfun->calls_alloca)
+        return true;
+
     if (!decl_initial)
         return false;
 
@@ -206,11 +212,6 @@ static bool signing_required(void)
     if (attr != NULL_TREE)
         return false;
 
-    // Omit function if stack overflow is unlikely
-    if (!cfun->calls_alloca &&
-        !has_protected_decls(DECL_INITIAL(current_function_decl)))
-        return false;
-
     /* Turn return address signing off in any function that uses
        __builtin_eh_return.  The address passed to __builtin_eh_return
        is not signed so either it has to be signed (with original sp)
@@ -226,6 +227,12 @@ static bool signing_required(void)
     if (!aarch64_signing_required())
         return false;
 #endif
+
+    if (pac_sign_scope != SIGN_SCOPE_ALL) {
+        // Omit functions where stack overflow is unlikely
+        if (!has_protected_decls(DECL_INITIAL(current_function_decl)))
+            return false;
+    }
 
     return true;
 }
@@ -274,18 +281,54 @@ static rtx expand_asm_loc(tree string, int vol, location_t locus)
     return body;
 }
 
-static void insert_prologue(void)
+static bool insert_prologue(void)
 {
     tree string = build_string(strlen(prologue_s), prologue_s);
     rtx body = expand_asm_loc(string, 1, prologue_location);
-    emit_insn_before(body, get_first_nonnote_insn());
+
+    rtx_insn *insn = get_insns();
+    rtx_insn *last_frame_related = NULL;
+
+    while (insn && !(NOTE_P(insn) && NOTE_KIND(insn) == NOTE_INSN_PROLOGUE_END))
+        insn = NEXT_INSN(insn);
+
+    while (insn) {
+        if (RTX_FRAME_RELATED_P(insn))
+            last_frame_related = insn;
+        insn = PREV_INSN(insn);
+    }
+
+    if (last_frame_related)
+        emit_insn_before(body, last_frame_related);
+
+    return last_frame_related != NULL;
 }
 
-static void insert_epilogue(void)
+static bool insert_epilogue(void)
 {
+    bool ret = false;
     tree string = build_string(strlen(epilogue_s), epilogue_s);
     rtx body = expand_asm_loc(string, 1, epilogue_location);
-    emit_insn_before(body, PREV_INSN(get_last_nonnote_insn()));
+    rtx_insn *insn = get_insns();
+
+    while (insn) {
+        rtx_insn *last_frame_related = NULL;
+        while (insn && !(NOTE_P(insn) && NOTE_KIND(insn) == NOTE_INSN_EPILOGUE_BEG))
+            insn = NEXT_INSN(insn);
+
+        while (insn && !BARRIER_P(insn)) {
+            if (RTX_FRAME_RELATED_P(insn))
+                last_frame_related = insn;
+            insn = NEXT_INSN(insn);
+        }
+
+        if (last_frame_related) {
+            emit_insn_after(body, last_frame_related);
+            ret = true;
+        }
+    }
+
+    return ret;
 }
 
 // For each function lookup attributes and attach instrumentation.
@@ -293,45 +336,20 @@ static unsigned int execute_inst_pac(void)
 {
     inst_stat.total++;
 
-    if (!signing_required())
-        return 0;
-
-    if (prologue_s)
+    if (signing_required() && insert_epilogue()) {
+        /* Include the prologue only if we managed to generate at least one
+           epilogue.  Epilogue can be omitted due to optimization or when a
+           tail/sibling call is proven to never return. */
         insert_prologue();
-    if (epilogue_s)
-        insert_epilogue();
 
-    dbg(PLUGIN_NAME ": %s: %s instrumented.\n", main_input_filename, CURRENT_FN_NAME());
-
-    inst_stat.instrumented++;
-    return 0;
-}
-
-static int read_code(const char *file, const char **code)
-{
-    size_t fsize;
-    char *tmp = NULL;
-    FILE *f = fopen(file, "r");
-    if (!f)
-        return 1;
-
-    fseek(f, 0, SEEK_END);
-    fsize = ftell(f);
-    rewind(f);
-
-    tmp = (char *) xmalloc(fsize+1);
-    if (fread(tmp, 1, fsize, f) != fsize) {
-        free(tmp);
-        fclose(f);
-        return 1;
+        dbg(PLUGIN_NAME ": %s: %s instrumented.\n", main_input_filename, CURRENT_FN_NAME());
+        inst_stat.instrumented++;
     }
 
-    tmp[fsize] = 0;
-    *code = tmp;
     return 0;
 }
 
-static void inst_stat_print(void *event_data, void *data)
+static void inst_stat_dump(void *event_data, void *data)
 {
     FILE *f;
     if (!inst_stat_file)
@@ -375,22 +393,16 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
         const char *value = info->argv[i].value;
 
         if (!strcmp(key, "sign-scope")) {
-            if (!strcmp(value, "all"))
-                pac_sign_scope = SIGN_SCOPE_ALL;
-            else if (!strcmp(value, "standard"))
+            if (!strcmp(value, "nil"))
+                pac_sign_scope = SIGN_SCOPE_NIL;
+            else if (!strcmp(value, "std"))
                 pac_sign_scope = SIGN_SCOPE_STD;
+            else if (!strcmp(value, "ext"))
+                pac_sign_scope = SIGN_SCOPE_EXT;
+            else if (!strcmp(value, "all"))
+                pac_sign_scope = SIGN_SCOPE_ALL;
             else {
-                err(PLUGIN_NAME ": Invalid sign scope %s.\n", value);
-                return 1;
-            }
-        } else if (!strcmp(key, "prologue")) {
-            if (read_code(value, &prologue_s)) {
-                err(PLUGIN_NAME ": Unable to read %s.\n", value);
-                return 1;
-            }
-        } else if (!strcmp(key, "epilogue")) {
-            if (read_code(value, &epilogue_s)) {
-                err(PLUGIN_NAME ": Unable to read %s.\n", value);
+                err(PLUGIN_NAME ": Invalid sign scope `%s'.\n", value);
                 return 1;
             }
         } else if (!strcmp(key, "init-func")) {
@@ -398,7 +410,7 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
         } else if (!strcmp(key, "inst-dump")) {
             inst_stat_file = value;
         } else {
-            err(PLUGIN_NAME ": Unknown argument %s.\n", key);
+            err(PLUGIN_NAME ": Unknown argument `%s'.\n", key);
             return 1;
         }
     }
@@ -406,13 +418,13 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
     // Register info about this plugin.
     register_callback(PLUGIN_NAME, PLUGIN_INFO, NULL, &inst_plugin_info);
 
-    if (prologue_s || epilogue_s) {
+    if (pac_sign_scope != SIGN_SCOPE_NIL) {
         // Get called at attribute registration.
         register_callback(PLUGIN_NAME, PLUGIN_ATTRIBUTES, register_attributes, NULL);
         // Add our pass into the pass manager.
         register_callback(PLUGIN_NAME, PLUGIN_PASS_MANAGER_SETUP, NULL, &pass_inst);
-        // Print statistics at the end.
-        register_callback(PLUGIN_NAME, PLUGIN_FINISH_UNIT, inst_stat_print, NULL);
+        // Save statistics at the end.
+        register_callback(PLUGIN_NAME, PLUGIN_FINISH_UNIT, inst_stat_dump, NULL);
     }
 
     if (init_function)

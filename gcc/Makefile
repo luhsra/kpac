@@ -7,11 +7,12 @@ SRC = main.cc
 PROLOGUE ?= asm/$(ARCH)/prologue.S
 EPILOGUE ?= asm/$(ARCH)/epilogue.S
 
-PROLOGUE_IN = prologue.s
-EPILOGUE_IN = epilogue.s
+ASM_INC = asm.h
 
 TEST = test
 MAP_DEVICE = map_device
+
+SIGN_SCOPE ?= std
 
 # Plugins directory of GCC
 GCC_PLUGINS_DIR = $(shell $(TARGET_GCC) -print-file-name=plugin)
@@ -24,21 +25,23 @@ CXXFLAGS += -g -I$(GCC_PLUGINS_DIR)/include -fPIC -fno-rtti -DDEBUG -Wall -O2
 all: $(PLUGIN) $(TEST)
 
 # Preprocess assembler files before embedding
-$(PROLOGUE_IN): $(PROLOGUE)
-$(EPILOGUE_IN): $(EPILOGUE)
+$(ASM_INC): $(PROLOGUE) $(EPILOGUE)
+	echo "\
+	static const char prologue_s[] = {\n\
+	$$(gcc -E $(PROLOGUE) | xxd -i), 0x00\n\
+	};\n\n\
+	static const char epilogue_s[] = {\n\
+	$$(gcc -E $(EPILOGUE) | xxd -i), 0x00\n\
+	};" > $@
 
-$(PROLOGUE_IN) $(EPILOGUE_IN):
-	$(TARGET_GCC) -E $^ > $@
-
-$(PLUGIN): $(SRC)
+$(PLUGIN): $(SRC) $(ASM_INC)
 	$(CXX) -shared $(CXXFLAGS) $^ -o $@
 
-$(TEST): $(TEST).c $(MAP_DEVICE).o $(PLUGIN) $(PROLOGUE_IN) $(EPILOGUE_IN)
+$(TEST): $(TEST).c $(MAP_DEVICE).o $(PLUGIN)
 	$(TARGET_GCC) $< $(MAP_DEVICE).o \
 		-fplugin=./$(PLUGIN) \
-		-fplugin-arg-pac_sw_plugin-prologue=$(PROLOGUE_IN) \
-		-fplugin-arg-pac_sw_plugin-epilogue=$(EPILOGUE_IN) \
-		-fplugin-arg-pac_sw_plugin-init-func=map_device \
+		-fplugin-arg-pac_sw_plugin-sign-scope=$(SIGN_SCOPE) \
+		-fplugin-arg-pac_sw_plugin-init-func=$(MAP_DEVICE) \
 		-g -O0 -o $@
 
 $(MAP_DEVICE).o: $(MAP_DEVICE).c
@@ -56,4 +59,4 @@ $(MAP_DEVICE).o: $(MAP_DEVICE).c
 # 	-g -O0 -o bin
 
 clean:
-	$(RM) $(PLUGIN) $(TEST) $(PROLOGUE_IN) $(EPILOGUE_IN) $(MAP_DEVICE).o
+	$(RM) $(PLUGIN) $(TEST) $(ASM_INC) $(MAP_DEVICE).o

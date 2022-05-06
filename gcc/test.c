@@ -1,31 +1,31 @@
+// Local Variables:
+// rmsbolt-command: "gcc -O0 -fplugin=/srv/scratch/ill.ostapyshyn/pac-sw/gcc/pac_sw_plugin.so -fplugin-arg-pac_sw_plugin-sign-scope=std"
+// rmsbolt-disassemble: nil
+// End:
+
 #include <stdio.h>
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <stdlib.h>
 
-#define PAGE_SIZE 0x1000
-
-void f2()
+int f2(int a)
 {
-    int arr[50];
-    int b = 6;
-    b = b + 6;
-    return;
+    int arr[2];
+    int b = a;
+    b = b + arr[1];
+    return b;
 }
 
-void f1()
+int f1()
 {
+    int arr[2];
     int a = 5;
     a = a + 5;
-    int ar[40];
-    f2();
-    ar[2] += 3;
-    return;
+    return f2(a);
 }
 
 int main(int argc, char *argv[])
 {
-    printf("%s\n", argv[0]);
-    f1();
-    return 1;
+    printf("%s: %d\n", argv[0], f1());
+    return 0;
 }

@@ -11,6 +11,7 @@ compile_commands.json
 # Binaries
 bench/do_bench
 gcc/test
+gcc/asm.h
 sw/pac-sw
 sw/test
 __pycache__
