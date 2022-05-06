@@ -44,44 +44,26 @@ int main(void)
     signal(SIGINT, sigint_handler);
 
     while (!done) {
-        uint64_t state, stdby = DEV_STANDBY;
+        uint64_t state;
         uint64_t plain, tweak, cipher, recipher;
 
-        __atomic_load(area + PAC_STATE, &state, __ATOMIC_ACQUIRE);
+        state = __atomic_load_n(area + PAC_STATE, __ATOMIC_ACQUIRE);
         switch (state) {
         case DEV_PAC:
-            plain = area[PAC_PLAIN] & PLAIN_MASK;
-            tweak = area[PAC_TWEAK];
-
-            cipher = 0x1111111111111111;// qarma64_enc(plain, tweak, w0, k0, NUM_ROUNDS);
-            cipher = (plain & PLAIN_MASK) | (cipher & CIPHER_MASK);
-
-            /* printf("PAC: (%016lX, %016lX) -> %016lX\n", plain, tweak, cipher); */
             counter.pac++;
-
-            area[PAC_CIPH] = cipher;
+            area[PAC_CIPH] = area[PAC_PLAIN];
             break;
 
         case DEV_AUT:
-            cipher = area[PAC_CIPH];
-            tweak = area[PAC_TWEAK];
-            plain = cipher & PLAIN_MASK;
-
-            recipher = 0x1111111111111111;//qarma64_enc(plain, tweak, w0, k0, NUM_ROUNDS);
-            if ((cipher & CIPHER_MASK) != (recipher & CIPHER_MASK))
-                plain |= (1UL << 63);
-
-            /* printf("AUT: (%016lX, %016lX) -> %016lX\n", orig, tweak, plain); */
             counter.aut++;
-
-            area[PAC_PLAIN] = plain;
+            area[PAC_PLAIN] = area[PAC_CIPH];
             break;
 
         default:
             continue;
         }
 
-        __atomic_store(area + PAC_STATE, &stdby, __ATOMIC_RELEASE);
+        __atomic_store_n(area + PAC_STATE, DEV_STANDBY, __ATOMIC_RELEASE);
 
 #ifdef __aarch64__
         asm ("sev");
