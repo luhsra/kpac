@@ -21,12 +21,8 @@ class Measurement:
         return rel
 
 class Build:
-    def __init__(self, inst, auths):
-        self.df = pd.read_csv(inst, index_col='name')
-        auths = pd.read_csv(auths, index_col='name')
-        if not auths['pac'].equals(auths['aut']):
-            raise RuntimeException("pac != aut")
-        self.df['auths'] = auths['pac']
+    def __init__(self, build):
+        self.df = pd.read_csv(build, index_col='name')
 
     def __getitem__(self, key):
         return self.df[key]
