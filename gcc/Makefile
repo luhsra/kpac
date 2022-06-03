@@ -10,9 +10,19 @@ EPILOGUE ?= asm/$(ARCH)/epilogue.S
 ASM_INC = asm.h
 
 TEST = test
-MAP_DEVICE = map_device
 
 SIGN_SCOPE ?= std
+
+INIT_OBJ = #../sw/map_device.o
+INIT_FUNC ?= $(basename $(notdir $(INIT_OBJ)))
+
+PLUGIN_ARGS := -fplugin=./$(PLUGIN)
+ifneq ($(strip $(INIT_FUNC)),)
+PLUGIN_ARGS += -fplugin-arg-pac_sw_plugin-init-func=$(INIT_FUNC)
+endif
+ifneq ($(strip $(SIGN_SCOPE)),)
+PLUGIN_ARGS += -fplugin-arg-pac_sw_plugin-sign-scope=$(SIGN_SCOPE)
+endif
 
 # Plugins directory of GCC
 GCC_PLUGINS_DIR = $(shell $(TARGET_GCC) -print-file-name=plugin)
@@ -37,14 +47,10 @@ $(ASM_INC): $(PROLOGUE) $(EPILOGUE)
 $(PLUGIN): $(SRC) $(ASM_INC)
 	$(CXX) -shared $(CXXFLAGS) $^ -o $@
 
-$(TEST): $(TEST).c $(MAP_DEVICE).o $(PLUGIN)
-	$(TARGET_GCC) $< $(MAP_DEVICE).o \
-		-fplugin=./$(PLUGIN) \
-		-fplugin-arg-pac_sw_plugin-sign-scope=$(SIGN_SCOPE) \
-		-fplugin-arg-pac_sw_plugin-init-func=$(MAP_DEVICE) \
-		-g -O0 -o $@
+$(TEST): $(TEST).c $(INIT_OBJ) $(PLUGIN)
+	$(TARGET_GCC) $< $(INIT_OBJ) $(PLUGIN_ARGS) -g -O0 -o $@
 
-$(MAP_DEVICE).o: $(MAP_DEVICE).c
+$(INIT_OBJ): $(INIT_OBJ:%.o=%.c)
 	$(TARGET_GCC) $< -c -o $@
 
 # testnostd: gcc_pac_plugin.so
@@ -59,4 +65,4 @@ $(MAP_DEVICE).o: $(MAP_DEVICE).c
 # 	-g -O0 -o bin
 
 clean:
-	$(RM) $(PLUGIN) $(TEST) $(ASM_INC) $(MAP_DEVICE).o
+	$(RM) $(PLUGIN) $(TEST) $(ASM_INC) $(INIT_OBJ)
