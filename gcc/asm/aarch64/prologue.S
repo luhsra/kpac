@@ -1,14 +1,14 @@
 #include "../common.h"
 
-	mov	x9, #DEV_BASE
+	mov	x9, #PAC_BASE
 	mov	x10, sp
-	stp	lr, x10, [x9, #DEV_PLAIN_OFFSET]
+	stp	lr, x10, [x9, #REG_PLAIN]
 
-	mov	x10, #DEV_PAC
+	mov	x10, #OP_PAC
 	stlr	x10, [x9]
 
 	sevl
 1:	wfe
 	ldr	x10, [x9]
 	cbnz	x10, 1b
-	ldr	lr, [x9, #DEV_CIPHER_OFFSET]
+	ldr	lr, [x9, #REG_CIPHER]

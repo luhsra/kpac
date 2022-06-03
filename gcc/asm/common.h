@@ -1,18 +1,13 @@
 #ifndef __ASM_PAC_COMMON_H
 #define __ASM_PAC_COMMON_H
 
-#define DEV_STANDBY		0
-#define DEV_PAC			1
-#define DEV_AUT			2
+#define OP_PAC			1
+#define OP_AUT			2
 
-#define DEV_BASE		0xA000000
+#define PAC_BASE		0x9AC00000000
 
-#define DEV_PLAIN_OFFSET	8
-#define DEV_TWEAK_OFFSET	16
-#define DEV_CIPHER_OFFSET	24
-
-#define DEV_PLAIN		(DEV_BASE+DEV_PLAIN_OFFSET)
-#define DEV_TWEAK		(DEV_BASE+DEV_TWEAK_OFFSET)
-#define DEV_CIPHER		(DEV_BASE+DEV_CIPHER_OFFSET)
+#define REG_PLAIN		8
+#define REG_TWEAK		16
+#define REG_CIPHER		24
 
 #endif /* __ASM_PAC_COMMON_H */

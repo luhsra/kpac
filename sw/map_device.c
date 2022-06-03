@@ -13,7 +13,7 @@ void map_device(void)
     }
 
 
-    unsigned long *area = mmap((void *) 0xA000000UL, PAGE_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, fd, 0);
+    unsigned long *area = mmap((void *) 0x9AC00000000UL, PAGE_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, fd, 0);
     if (area == MAP_FAILED) {
         perror("mmap");
         exit(1);
