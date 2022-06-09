@@ -59,18 +59,8 @@ extern gcc::context *g;
 static unsigned int execute_inst_pac(void);
 static unsigned int execute_init_pac(void);
 
-static tree handle_exclude_attr(tree *node, tree name, tree args,
-                                int flags, bool *no_add_attrs)
-{
-    return NULL_TREE;
-}
-
-// Structure describing an attribute and a function to handle it.
-static struct attribute_spec exclude_attr =
-{
-    .name = EXCLUDE_ATTR,
-    .handler = handle_exclude_attr,
-};
+// Structure describing an attribute
+static struct attribute_spec exclude_attr = { .name = EXCLUDE_ATTR };
 
 // Metadata for the RTL instrumentation pass.  Attaches prologue and epilogue to
 // functions where required.
