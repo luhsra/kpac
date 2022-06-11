@@ -8,12 +8,14 @@ ASM_INC = asm.h
 PLUGIN = pac_sw_plugin.so
 SRC = main.cc
 
+TESTS = tests
+
 GCC_PLUGINS_DIR = $(shell $(TARGET_GCC) -print-file-name=plugin)
 
 # GCC CPP flags (we need pic and no-rtti)
 CXXFLAGS += -g -I$(GCC_PLUGINS_DIR)/include -fPIC -fno-rtti -DDEBUG -Wall -O2
 
-.PHONY: all clean
+.PHONY: all clean run_tests
 
 all: $(PLUGIN)
 
@@ -30,5 +32,9 @@ $(ASM_INC): $(PROLOGUE) $(EPILOGUE)
 $(PLUGIN): $(SRC) $(ASM_INC)
 	$(CXX) -shared $(CXXFLAGS) $^ -o $@
 
+run_tests:
+	$(MAKE) -C $(TESTS) all
+
 clean:
 	$(RM) $(PLUGIN) $(ASM_INC)
+	$(MAKE) -C $(TESTS) clean
