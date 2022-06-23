@@ -9,6 +9,6 @@
 
 	sevl
 1:	wfe
-	ldr	x10, [x9]
+	ldxr	x10, [x9]
 	cbnz	x10, 1b
 	ldr	lr, [x9, #REG_PLAIN]
