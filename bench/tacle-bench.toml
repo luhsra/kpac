@@ -2,7 +2,7 @@ samples = 1000
 warmup = 100
 
 do_run = "./a.out"
-do_build = "gcc *.c $PAC_OBJ $PAC_FLAGS"
+do_build = "gcc *.c $CFLAGS $PAC_FLAGS"
 
 [benchmarks.ammunition]
 path = "tacle-bench/bench/sequential/ammunition"

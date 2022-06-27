@@ -1,0 +1,924 @@
+diff --git a/cortex/clustering/kmeans/Makefile b/cortex/clustering/kmeans/Makefile
+index 72a00a0..6c8b3b9 100644
+--- a/cortex/clustering/kmeans/Makefile
++++ b/cortex/clustering/kmeans/Makefile
+@@ -1,12 +1,12 @@
+ .SUFFIXES: .c .u
+ CC= gcc
+-CFLAGS  = 
+-LDFLAGS = -lm
++CFLAGS  = $(PAC_FLAGS)
++LDFLAGS = -lm $(PAC_OBJ)
+ 
+ 
+ 
+ INCLUDES = -I$(CURDIR)/includes -I$(CURDIR)
+-COMPILE_C = $(CC) $(CFLAGS) -O2 $(INCLUDES)
++COMPILE_C = $(CC) $(CFLAGS) -O0 $(INCLUDES)
+ COMMON_SRC := $(wildcard $(CURDIR)/*.c)
+ C_SRC := $(wildcard $(CURDIR)/includes/*.c)
+ SMALL = 
+@@ -28,13 +28,13 @@ large: $(C_SRC)
+ 	$(COMPILE_C) $(COMMON_SRC) $(C_SRC) $(CFLAGS) -o kmeans-large $(LDFLAGS)
+ 
+ run-small:
+-	-./kmeans-small ../datasets/yeast 1484 8 10 2>&1 | tee ../../results/kmeans.small
++	./kmeans-small ../datasets/yeast 1484 8 10 2>&1 | tee ../../results/kmeans.small
+ 
+ run-medium:
+-	-./kmeans-medium ../datasets/finland 13467 2 15 2>&1 | tee ../../results/kmeans.medium
++	./kmeans-medium ../datasets/finland 13467 2 15 2>&1 | tee ../../results/kmeans.medium
+ 
+ run-large:
+-	-./kmeans-large ../datasets/MINST 10000 748 10 2>&1 | tee ../../results/kmeans.large
++	./kmeans-large ../datasets/MINST 10000 748 10 2>&1 | tee ../../results/kmeans.large
+ 
+ 
+ clean:
+diff --git a/cortex/clustering/kmeans/includes/photonTiming.c b/cortex/clustering/kmeans/includes/photonTiming.c
+index 0a63d2f..90518bf 100644
+--- a/cortex/clustering/kmeans/includes/photonTiming.c
++++ b/cortex/clustering/kmeans/includes/photonTiming.c
+@@ -9,46 +9,26 @@ Author: Sravanthi Kota Venkata
+ #include <assert.h>
+ #include <math.h>
+ 
+-#include "timingUtils.h"
+-
+ unsigned int* photonStartTiming()
+ {
+-	unsigned int *array;
+-
+-    array = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-	magic_timing_begin(array[0], array[1]);
+-    return array;
++    return NULL;
+ }
+ 
+ unsigned int * photonReportTiming(unsigned int* startCycles,unsigned int* endCycles)
+ {
+ 
+-    unsigned int *elapsed;
+-    elapsed = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-	unsigned long long start = (((unsigned long long)0x0) | startCycles[0]) << 32 | startCycles[1];
+-	unsigned long long end = (((unsigned long long)0x0) | endCycles[0]) << 32 | endCycles[1];
+-	unsigned long long diff = end - start;
+-	elapsed[0] = (unsigned int)(diff >> 32);
+-	elapsed[1] = (unsigned int)(diff & 0xffffffff);
+-    return elapsed;
++    return NULL;
+ 
+ }
+ 
+ void photonPrintTiming(unsigned int * elapsed)
+ {
+-    if(elapsed[1] == 0)
+-	    printf("Cycles elapsed\t\t- %u\n\n", elapsed[0]);
+-    else
+-	    printf("Cycles elapsed\t\t- %u%u\n\n", elapsed[1], elapsed[0]);
++    return;
+ }
+ 
+ unsigned int * photonEndTiming()
+ {
+-	unsigned int *array;
+-    array = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-
+-	magic_timing_begin(array[0], array[1]);
+-	return array;
++    return NULL;
+ }
+ 
+ 
+diff --git a/cortex/clustering/spectral/Makefile b/cortex/clustering/spectral/Makefile
+index ec1d0c0..201e890 100644
+--- a/cortex/clustering/spectral/Makefile
++++ b/cortex/clustering/spectral/Makefile
+@@ -1,12 +1,12 @@
+ .SUFFIXES: .c .u
+ CC= gcc
+-CFLAGS  = 
+-LDFLAGS = -lm
++CFLAGS  = $(PAC_FLAGS)
++LDFLAGS = -lm $(PAC_OBJ)
+ 
+ 
+ 
+ INCLUDES = -I$(CURDIR)/includes -I$(CURDIR)
+-COMPILE_C = $(CC) $(CFLAGS) -O2 $(INCLUDES)
++COMPILE_C = $(CC) $(CFLAGS) -O0 $(INCLUDES)
+ COMMON_SRC := $(wildcard $(CURDIR)/*.c)
+ C_SRC := $(wildcard $(CURDIR)/includes/*.c)
+ SMALL = 
+@@ -28,13 +28,13 @@ large: $(C_SRC)
+ 	$(COMPILE_C) $(COMMON_SRC) $(C_SRC) $(CFLAGS) -o spc-large $(LDFLAGS)
+ 
+ run-small:
+-	-./spc-small ../datasets/R15 600 2 15 0.707 1 2>&1 | tee ../../results/spc.small
++	./spc-small ../datasets/R15 600 2 15 0.707 1 2>&1 | tee ../../results/spc.small
+ 
+ run-medium:
+-	-./spc-medium ../datasets/Aggregation 788 2 7 0.707 1 2>&1 | tee ../../results/spc.medium
++	./spc-medium ../datasets/Aggregation 788 2 7 0.707 1 2>&1 | tee ../../results/spc.medium
+ 
+ run-large:
+-	-./spc-large ../datasets/D31 1600 2 16 0.707 1 2>&1 | tee ../../results/spc.large
++	./spc-large ../datasets/D31 1600 2 16 0.707 1 2>&1 | tee ../../results/spc.large
+ 
+ 
+ clean:
+diff --git a/cortex/clustering/spectral/includes/photonTiming.c b/cortex/clustering/spectral/includes/photonTiming.c
+index 0a63d2f..90518bf 100644
+--- a/cortex/clustering/spectral/includes/photonTiming.c
++++ b/cortex/clustering/spectral/includes/photonTiming.c
+@@ -9,46 +9,26 @@ Author: Sravanthi Kota Venkata
+ #include <assert.h>
+ #include <math.h>
+ 
+-#include "timingUtils.h"
+-
+ unsigned int* photonStartTiming()
+ {
+-	unsigned int *array;
+-
+-    array = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-	magic_timing_begin(array[0], array[1]);
+-    return array;
++    return NULL;
+ }
+ 
+ unsigned int * photonReportTiming(unsigned int* startCycles,unsigned int* endCycles)
+ {
+ 
+-    unsigned int *elapsed;
+-    elapsed = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-	unsigned long long start = (((unsigned long long)0x0) | startCycles[0]) << 32 | startCycles[1];
+-	unsigned long long end = (((unsigned long long)0x0) | endCycles[0]) << 32 | endCycles[1];
+-	unsigned long long diff = end - start;
+-	elapsed[0] = (unsigned int)(diff >> 32);
+-	elapsed[1] = (unsigned int)(diff & 0xffffffff);
+-    return elapsed;
++    return NULL;
+ 
+ }
+ 
+ void photonPrintTiming(unsigned int * elapsed)
+ {
+-    if(elapsed[1] == 0)
+-	    printf("Cycles elapsed\t\t- %u\n\n", elapsed[0]);
+-    else
+-	    printf("Cycles elapsed\t\t- %u%u\n\n", elapsed[1], elapsed[0]);
++    return;
+ }
+ 
+ unsigned int * photonEndTiming()
+ {
+-	unsigned int *array;
+-    array = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-
+-	magic_timing_begin(array[0], array[1]);
+-	return array;
++    return NULL;
+ }
+ 
+ 
+diff --git a/cortex/lda/Makefile b/cortex/lda/Makefile
+index 0c94639..7dac479 100644
+--- a/cortex/lda/Makefile
++++ b/cortex/lda/Makefile
+@@ -5,13 +5,13 @@ TOP_DIR = $(shell pwd)
+ COMMON = $(TOP_DIR)/common
+ 
+ CC= gcc
+-CFLAGS  = -O2
+-LDFLAGS = -lm
++CFLAGS  = $(PAC_FLAGS)
++LDFLAGS = -lm $(PAC_OBJ)
+ 
+ 
+ 
+ INCLUDES = -I$(CURDIR)/includes -I$(CURDIR)
+-COMPILE_C = $(CC) $(CFLAGS) -O2 $(INCLUDES)
++COMPILE_C = $(CC) $(CFLAGS) -O0 $(INCLUDES)
+ COMMON_SRC := $(wildcard $(CURDIR)/*.c)
+ C_SRC := $(wildcard $(CURDIR)/includes/*.c)
+ 
+@@ -30,13 +30,13 @@ large: $(C_SRC)
+ 	$(COMPILE_C) $(COMMON_SRC) $(C_SRC) $(CFLAGS) -o lda-large $(LDFLAGS)
+ 
+ run-small:
+-	-./lda-small est .1 3 settings.txt small/small_data.dat random small/result 2>&1 | tee ../results/lda.small
++	./lda-small est .1 3 settings.txt small/small_data.dat random small/result 2>&1 | tee ../results/lda.small
+ 
+ run-medium:
+-	-./lda-medium est .1 3 settings.txt medium/medium_data.dat random medium/results 2>&1 | tee ../results/lda.medium
++	./lda-medium est .1 3 settings.txt medium/medium_data.dat random medium/results 2>&1 | tee ../results/lda.medium
+ 
+ run-large:
+-	-./lda-large est .1 3 settings.txt large/large_data.dat random large/results 2>&1 | tee ../results/lda.large
++	./lda-large est .1 3 settings.txt large/large_data.dat random large/results 2>&1 | tee ../results/lda.large
+ 
+ clean:
+ 	-rm -f *.o lda-small lda-medium lda-large
+diff --git a/cortex/lda/includes/photonTiming.c b/cortex/lda/includes/photonTiming.c
+index 0a63d2f..90518bf 100644
+--- a/cortex/lda/includes/photonTiming.c
++++ b/cortex/lda/includes/photonTiming.c
+@@ -9,46 +9,26 @@ Author: Sravanthi Kota Venkata
+ #include <assert.h>
+ #include <math.h>
+ 
+-#include "timingUtils.h"
+-
+ unsigned int* photonStartTiming()
+ {
+-	unsigned int *array;
+-
+-    array = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-	magic_timing_begin(array[0], array[1]);
+-    return array;
++    return NULL;
+ }
+ 
+ unsigned int * photonReportTiming(unsigned int* startCycles,unsigned int* endCycles)
+ {
+ 
+-    unsigned int *elapsed;
+-    elapsed = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-	unsigned long long start = (((unsigned long long)0x0) | startCycles[0]) << 32 | startCycles[1];
+-	unsigned long long end = (((unsigned long long)0x0) | endCycles[0]) << 32 | endCycles[1];
+-	unsigned long long diff = end - start;
+-	elapsed[0] = (unsigned int)(diff >> 32);
+-	elapsed[1] = (unsigned int)(diff & 0xffffffff);
+-    return elapsed;
++    return NULL;
+ 
+ }
+ 
+ void photonPrintTiming(unsigned int * elapsed)
+ {
+-    if(elapsed[1] == 0)
+-	    printf("Cycles elapsed\t\t- %u\n\n", elapsed[0]);
+-    else
+-	    printf("Cycles elapsed\t\t- %u%u\n\n", elapsed[1], elapsed[0]);
++    return;
+ }
+ 
+ unsigned int * photonEndTiming()
+ {
+-	unsigned int *array;
+-    array = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-
+-	magic_timing_begin(array[0], array[1]);
+-	return array;
++    return NULL;
+ }
+ 
+ 
+diff --git a/cortex/lda/lda-inference.c b/cortex/lda/lda-inference.c
+index d10fda3..d00b4b7 100644
+--- a/cortex/lda/lda-inference.c
++++ b/cortex/lda/lda-inference.c
+@@ -19,6 +19,9 @@
+ 
+ #include "lda-inference.h"
+ 
++float VAR_CONVERGED;
++int VAR_MAX_ITER;
++
+ /*
+  * variational inference
+  *
+diff --git a/cortex/lda/lda-inference.h b/cortex/lda/lda-inference.h
+index 56f08ae..ae3cfd6 100644
+--- a/cortex/lda/lda-inference.h
++++ b/cortex/lda/lda-inference.h
+@@ -7,8 +7,8 @@
+ #include "lda.h"
+ #include "utils.h"
+ 
+-float VAR_CONVERGED;
+-int VAR_MAX_ITER;
++extern float VAR_CONVERGED;
++extern int VAR_MAX_ITER;
+ 
+ double lda_inference(document*, lda_model*, double*, double**);
+ double compute_likelihood(document*, lda_model*, double**, double*);
+diff --git a/cortex/liblinear/Makefile b/cortex/liblinear/Makefile
+index c89da97..9694ab3 100644
+--- a/cortex/liblinear/Makefile
++++ b/cortex/liblinear/Makefile
+@@ -1,13 +1,13 @@
+ CC ?= gcc
+-CFLAGS = -Wall -fPIC
++CFLAGS = -w -fPIC $(PAC_FLAGS)
+ LDFLAGS = -lm
+-LIBS = blas/blas.a
++LIBS = blas/blas.a $(PAC_OBJ)
+ SHVER = 1
+ OS = $(shell uname)
+ 
+ 
+ INCLUDES = -I$(CURDIR)/includes -I$(CURDIR)
+-COMPILE_C = $(CC) $(CFLAGS) -O2 $(INCLUDES)
++COMPILE_C = $(CC) $(CFLAGS) -O0 $(INCLUDES)
+ COMMON_SRC := $(wildcard $(CURDIR)/*.c)
+ C_SRC := $(wildcard $(CURDIR)/includes/*.c)
+ 
+@@ -31,13 +31,13 @@ blas/blas.a: blas/*.c blas/*.h
+ 	make -C blas OPTFLAGS='$(CFLAGS)' CC='$(CC)'
+ 
+ run-small:
+-	-./liblinear-tsmall data/100M/crime_scale 2>&1 | tee ../results/libl.small
++	./liblinear-tsmall data/100M/crime_scale 2>&1 | tee ../results/libl.small
+ 
+ run-medium:
+-	-./liblinear-tmedium data/10B/epsilon 2>&1 | tee ../results/libl.medium
++	./liblinear-tmedium data/10B/epsilon 2>&1 | tee ../results/libl.medium
+ 
+ run-large:
+-	-./liblinear-tlarge data/100B/kdda 2>&1 | tee ../results/libl.large
++	./liblinear-tlarge data/100B/kdda 2>&1 | tee ../results/libl.large
+ 
+ 
+ clean:
+diff --git a/cortex/liblinear/includes/photonTiming.c b/cortex/liblinear/includes/photonTiming.c
+index 0a63d2f..90518bf 100644
+--- a/cortex/liblinear/includes/photonTiming.c
++++ b/cortex/liblinear/includes/photonTiming.c
+@@ -9,46 +9,26 @@ Author: Sravanthi Kota Venkata
+ #include <assert.h>
+ #include <math.h>
+ 
+-#include "timingUtils.h"
+-
+ unsigned int* photonStartTiming()
+ {
+-	unsigned int *array;
+-
+-    array = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-	magic_timing_begin(array[0], array[1]);
+-    return array;
++    return NULL;
+ }
+ 
+ unsigned int * photonReportTiming(unsigned int* startCycles,unsigned int* endCycles)
+ {
+ 
+-    unsigned int *elapsed;
+-    elapsed = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-	unsigned long long start = (((unsigned long long)0x0) | startCycles[0]) << 32 | startCycles[1];
+-	unsigned long long end = (((unsigned long long)0x0) | endCycles[0]) << 32 | endCycles[1];
+-	unsigned long long diff = end - start;
+-	elapsed[0] = (unsigned int)(diff >> 32);
+-	elapsed[1] = (unsigned int)(diff & 0xffffffff);
+-    return elapsed;
++    return NULL;
+ 
+ }
+ 
+ void photonPrintTiming(unsigned int * elapsed)
+ {
+-    if(elapsed[1] == 0)
+-	    printf("Cycles elapsed\t\t- %u\n\n", elapsed[0]);
+-    else
+-	    printf("Cycles elapsed\t\t- %u%u\n\n", elapsed[1], elapsed[0]);
++    return;
+ }
+ 
+ unsigned int * photonEndTiming()
+ {
+-	unsigned int *array;
+-    array = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-
+-	magic_timing_begin(array[0], array[1]);
+-	return array;
++    return NULL;
+ }
+ 
+ 
+diff --git a/cortex/motion-estimation/Makefile b/cortex/motion-estimation/Makefile
+index 9cc5f0f..be87062 100644
+--- a/cortex/motion-estimation/Makefile
++++ b/cortex/motion-estimation/Makefile
+@@ -1,12 +1,12 @@
+ .SUFFIXES: .c .u
+ CC= gcc
+-CFLAGS  = -O2
+-LDFLAGS = -lm
++CFLAGS  = $(PAC_FLAGS)
++LDFLAGS = -lm $(PAC_OBJ)
+ 
+ 
+ 
+ INCLUDES = -I$(CURDIR)/includes -I$(CURDIR)
+-COMPILE_C = $(CC) $(CFLAGS) -O2 $(INCLUDES)
++COMPILE_C = $(CC) $(CFLAGS) -O0 $(INCLUDES)
+ COMMON_SRC := $(wildcard $(CURDIR)/*.c)
+ C_SRC := $(wildcard $(CURDIR)/includes/*.c)
+ SMALL = -DSYNTHETIC1
+@@ -28,13 +28,13 @@ large: $(C_SRC)
+ 	$(COMPILE_C) $(COMMON_SRC) $(C_SRC) $(LARGE) $(CFLAGS) -o me-large $(LDFLAGS)
+ 
+ run-small:
+-	-./me-small 2>&1 | tee ../results/me.small
++	./me-small 2>&1 | tee ../results/me.small
+ 
+ run-medium:
+-	-./me-medium 2>&1 | tee ../results/me.medium
++	./me-medium 2>&1 | tee ../results/me.medium
+ 
+ run-large:
+-	-./me-large 2>&1 | tee ../results/me.large
++	./me-large 2>&1 | tee ../results/me.large
+ 
+ clean:
+ 	-rm -f *.o me-small me-medium me-large
+diff --git a/cortex/motion-estimation/includes/photonTiming.c b/cortex/motion-estimation/includes/photonTiming.c
+index 0a63d2f..90518bf 100644
+--- a/cortex/motion-estimation/includes/photonTiming.c
++++ b/cortex/motion-estimation/includes/photonTiming.c
+@@ -9,46 +9,26 @@ Author: Sravanthi Kota Venkata
+ #include <assert.h>
+ #include <math.h>
+ 
+-#include "timingUtils.h"
+-
+ unsigned int* photonStartTiming()
+ {
+-	unsigned int *array;
+-
+-    array = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-	magic_timing_begin(array[0], array[1]);
+-    return array;
++    return NULL;
+ }
+ 
+ unsigned int * photonReportTiming(unsigned int* startCycles,unsigned int* endCycles)
+ {
+ 
+-    unsigned int *elapsed;
+-    elapsed = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-	unsigned long long start = (((unsigned long long)0x0) | startCycles[0]) << 32 | startCycles[1];
+-	unsigned long long end = (((unsigned long long)0x0) | endCycles[0]) << 32 | endCycles[1];
+-	unsigned long long diff = end - start;
+-	elapsed[0] = (unsigned int)(diff >> 32);
+-	elapsed[1] = (unsigned int)(diff & 0xffffffff);
+-    return elapsed;
++    return NULL;
+ 
+ }
+ 
+ void photonPrintTiming(unsigned int * elapsed)
+ {
+-    if(elapsed[1] == 0)
+-	    printf("Cycles elapsed\t\t- %u\n\n", elapsed[0]);
+-    else
+-	    printf("Cycles elapsed\t\t- %u%u\n\n", elapsed[1], elapsed[0]);
++    return;
+ }
+ 
+ unsigned int * photonEndTiming()
+ {
+-	unsigned int *array;
+-    array = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-
+-	magic_timing_begin(array[0], array[1]);
+-	return array;
++    return NULL;
+ }
+ 
+ 
+diff --git a/cortex/pca/Makefile b/cortex/pca/Makefile
+index 474058f..6e95768 100644
+--- a/cortex/pca/Makefile
++++ b/cortex/pca/Makefile
+@@ -1,12 +1,12 @@
+ .SUFFIXES: .c .u
+ CC= gcc
+-CFLAGS  = 
+-LDFLAGS = -lm
++CFLAGS  = $(PAC_FLAGS)
++LDFLAGS = -lm $(PAC_OBJ)
+ 
+ 
+ 
+ INCLUDES = -I$(CURDIR)/includes -I$(CURDIR)
+-COMPILE_C = $(CC) $(CFLAGS) -O2 $(INCLUDES)
++COMPILE_C = $(CC) $(CFLAGS) -O0 $(INCLUDES)
+ COMMON_SRC := $(wildcard $(CURDIR)/*.c)
+ C_SRC := $(wildcard $(CURDIR)/includes/*.c)
+ SMALL = 
+@@ -28,13 +28,13 @@ large: $(C_SRC)
+ 	$(COMPILE_C) $(COMMON_SRC) $(C_SRC) $(CFLAGS) -o pca-large $(LDFLAGS)
+ 
+ run-small:
+-	-./pca-small small.data 1593 256 R 2>&1 | tee ../results/pca.small
++	./pca-small small.data 1593 256 R 2>&1 | tee ../results/pca.small
+ 
+ run-medium:
+-	-./pca-medium medium.data 722 800 R 2>&1 | tee ../results/pca.medium
++	./pca-medium medium.data 722 800 R 2>&1 | tee ../results/pca.medium
+ 
+ run-large:
+-	-./pca-large large.data 5000 1059 R 2>&1 | tee ../results/pca.large
++	./pca-large large.data 5000 1059 R 2>&1 | tee ../results/pca.large
+ 
+ 
+ clean:
+diff --git a/cortex/pca/includes/photonTiming.c b/cortex/pca/includes/photonTiming.c
+index 0a63d2f..90518bf 100644
+--- a/cortex/pca/includes/photonTiming.c
++++ b/cortex/pca/includes/photonTiming.c
+@@ -9,46 +9,26 @@ Author: Sravanthi Kota Venkata
+ #include <assert.h>
+ #include <math.h>
+ 
+-#include "timingUtils.h"
+-
+ unsigned int* photonStartTiming()
+ {
+-	unsigned int *array;
+-
+-    array = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-	magic_timing_begin(array[0], array[1]);
+-    return array;
++    return NULL;
+ }
+ 
+ unsigned int * photonReportTiming(unsigned int* startCycles,unsigned int* endCycles)
+ {
+ 
+-    unsigned int *elapsed;
+-    elapsed = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-	unsigned long long start = (((unsigned long long)0x0) | startCycles[0]) << 32 | startCycles[1];
+-	unsigned long long end = (((unsigned long long)0x0) | endCycles[0]) << 32 | endCycles[1];
+-	unsigned long long diff = end - start;
+-	elapsed[0] = (unsigned int)(diff >> 32);
+-	elapsed[1] = (unsigned int)(diff & 0xffffffff);
+-    return elapsed;
++    return NULL;
+ 
+ }
+ 
+ void photonPrintTiming(unsigned int * elapsed)
+ {
+-    if(elapsed[1] == 0)
+-	    printf("Cycles elapsed\t\t- %u\n\n", elapsed[0]);
+-    else
+-	    printf("Cycles elapsed\t\t- %u%u\n\n", elapsed[1], elapsed[0]);
++    return;
+ }
+ 
+ unsigned int * photonEndTiming()
+ {
+-	unsigned int *array;
+-    array = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-
+-	magic_timing_begin(array[0], array[1]);
+-	return array;
++    return NULL;
+ }
+ 
+ 
+diff --git a/cortex/rbm/Makefile b/cortex/rbm/Makefile
+index 5b05b3b..5fa44ff 100644
+--- a/cortex/rbm/Makefile
++++ b/cortex/rbm/Makefile
+@@ -1,8 +1,9 @@
+ CC = gcc
+-LDFLAGS = -lm
++LDFLAGS = -lm $(PAC_OBJ)
++CFLAGS = $(PAC_FLAGS)
+ 
+ INCLUDES = -I$(CURDIR)/includes -I$(CURDIR)
+-COMPILE_C = $(CC) $(CFLAGS) -O2 $(INCLUDES)
++COMPILE_C = $(CC) $(CFLAGS) -O0 $(INCLUDES)
+ COMMON_SRC := $(wildcard $(CURDIR)/*.c)
+ C_SRC := $(wildcard $(CURDIR)/includes/*.c)
+ 
+@@ -20,13 +21,13 @@ large: $(C_SRC)
+ 	$(COMPILE_C) $(COMMON_SRC) $(C_SRC) -DUSERS=100 -DTEST_USERS=100 -DMOVIES=100 -DLOOPS=200 -o rbm-large $(LDFLAGS)
+ 
+ run-small:
+-	-./rbm-small | tee ../results/rbm.small
++	./rbm-small | tee ../results/rbm.small
+ 
+ run-medium:
+-	-./rbm-medium  | tee ../results/rbm.medium
++	./rbm-medium  | tee ../results/rbm.medium
+ 
+ run-large:
+-	-./rbm-large  | tee ../results/rbm.large
++	./rbm-large  | tee ../results/rbm.large
+ 
+ clean:
+ 	-rm rbm-small rbm-medium rbm-large out.txt
+diff --git a/cortex/rbm/includes/photonTiming.c b/cortex/rbm/includes/photonTiming.c
+index 0a63d2f..90518bf 100644
+--- a/cortex/rbm/includes/photonTiming.c
++++ b/cortex/rbm/includes/photonTiming.c
+@@ -9,46 +9,26 @@ Author: Sravanthi Kota Venkata
+ #include <assert.h>
+ #include <math.h>
+ 
+-#include "timingUtils.h"
+-
+ unsigned int* photonStartTiming()
+ {
+-	unsigned int *array;
+-
+-    array = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-	magic_timing_begin(array[0], array[1]);
+-    return array;
++    return NULL;
+ }
+ 
+ unsigned int * photonReportTiming(unsigned int* startCycles,unsigned int* endCycles)
+ {
+ 
+-    unsigned int *elapsed;
+-    elapsed = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-	unsigned long long start = (((unsigned long long)0x0) | startCycles[0]) << 32 | startCycles[1];
+-	unsigned long long end = (((unsigned long long)0x0) | endCycles[0]) << 32 | endCycles[1];
+-	unsigned long long diff = end - start;
+-	elapsed[0] = (unsigned int)(diff >> 32);
+-	elapsed[1] = (unsigned int)(diff & 0xffffffff);
+-    return elapsed;
++    return NULL;
+ 
+ }
+ 
+ void photonPrintTiming(unsigned int * elapsed)
+ {
+-    if(elapsed[1] == 0)
+-	    printf("Cycles elapsed\t\t- %u\n\n", elapsed[0]);
+-    else
+-	    printf("Cycles elapsed\t\t- %u%u\n\n", elapsed[1], elapsed[0]);
++    return;
+ }
+ 
+ unsigned int * photonEndTiming()
+ {
+-	unsigned int *array;
+-    array = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-
+-	magic_timing_begin(array[0], array[1]);
+-	return array;
++    return NULL;
+ }
+ 
+ 
+diff --git a/cortex/sphinx/Makefile b/cortex/sphinx/Makefile
+index 266176e..089e13c 100644
+--- a/cortex/sphinx/Makefile
++++ b/cortex/sphinx/Makefile
+@@ -1,16 +1,19 @@
++CFLAGS = -O0 $(PAC_FLAGS)
++LDFLAGS = -lm $(PAC_OBJ)
++
+ compile:
+-	gcc -I includes main.c includes/*.c pocketsphinx/*.c sphinxbase/fe/*.c sphinxbase/feat/*.c sphinxbase/lm/*.c sphinxbase/util/*.c -o sphinx -O2 -lm
++	gcc $(CFLAGS) -I includes main.c includes/*.c pocketsphinx/*.c sphinxbase/fe/*.c sphinxbase/feat/*.c sphinxbase/lm/*.c sphinxbase/util/*.c -o sphinx $(LDFLAGS)
+ 
+ run-all: run-small run-medium run-large
+ 
+ run-small:
+-	-./sphinx small/audio.raw language_model/turtle/ 2> /dev/null 2>&1 | tee ../results/sphinx.small
++	./sphinx small/audio.raw language_model/turtle/ 2> /dev/null 2>&1 | tee ../results/sphinx.small
+ 
+ run-medium:
+-	-./sphinx medium/audio.raw language_model/HUB4/ 2> /dev/null 2>&1 | tee ../results/sphinx.medium
++	./sphinx medium/audio.raw language_model/HUB4/ 2> /dev/null 2>&1 | tee ../results/sphinx.medium
+ 
+ run-large:
+-	-./sphinx large/audio.raw language_model/HUB4/ 2> /dev/null 2>&1 | tee ../results/sphinx.large
++	./sphinx large/audio.raw language_model/HUB4/ 2> /dev/null 2>&1 | tee ../results/sphinx.large
+ 
+ clean:
+ 	-rm out.txt sphinx
+diff --git a/cortex/sphinx/includes/photonTiming.c b/cortex/sphinx/includes/photonTiming.c
+index 0a63d2f..90518bf 100644
+--- a/cortex/sphinx/includes/photonTiming.c
++++ b/cortex/sphinx/includes/photonTiming.c
+@@ -9,46 +9,26 @@ Author: Sravanthi Kota Venkata
+ #include <assert.h>
+ #include <math.h>
+ 
+-#include "timingUtils.h"
+-
+ unsigned int* photonStartTiming()
+ {
+-	unsigned int *array;
+-
+-    array = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-	magic_timing_begin(array[0], array[1]);
+-    return array;
++    return NULL;
+ }
+ 
+ unsigned int * photonReportTiming(unsigned int* startCycles,unsigned int* endCycles)
+ {
+ 
+-    unsigned int *elapsed;
+-    elapsed = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-	unsigned long long start = (((unsigned long long)0x0) | startCycles[0]) << 32 | startCycles[1];
+-	unsigned long long end = (((unsigned long long)0x0) | endCycles[0]) << 32 | endCycles[1];
+-	unsigned long long diff = end - start;
+-	elapsed[0] = (unsigned int)(diff >> 32);
+-	elapsed[1] = (unsigned int)(diff & 0xffffffff);
+-    return elapsed;
++    return NULL;
+ 
+ }
+ 
+ void photonPrintTiming(unsigned int * elapsed)
+ {
+-    if(elapsed[1] == 0)
+-	    printf("Cycles elapsed\t\t- %u\n\n", elapsed[0]);
+-    else
+-	    printf("Cycles elapsed\t\t- %u%u\n\n", elapsed[1], elapsed[0]);
++    return;
+ }
+ 
+ unsigned int * photonEndTiming()
+ {
+-	unsigned int *array;
+-    array = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-
+-	magic_timing_begin(array[0], array[1]);
+-	return array;
++    return NULL;
+ }
+ 
+ 
+diff --git a/cortex/srr/Makefile b/cortex/srr/Makefile
+index 7d08d85..142ace6 100644
+--- a/cortex/srr/Makefile
++++ b/cortex/srr/Makefile
+@@ -1,12 +1,12 @@
+ .SUFFIXES: .c .u
+ CC= gcc
+-CFLAGS  = -O2
+-LDFLAGS = -lm
++CFLAGS  = -O0 $(PAC_FLAGS)
++LDFLAGS = -lm $(PAC_OBJ)
+ 
+ 
+ 
+ INCLUDES = -I$(CURDIR)/includes -I$(CURDIR)
+-COMPILE_C = $(CC) $(CFLAGS) -O2 $(INCLUDES)
++COMPILE_C = $(CC) $(CFLAGS) -O0 $(INCLUDES)
+ COMMON_SRC := $(wildcard $(CURDIR)/*.c)
+ C_SRC := $(wildcard $(CURDIR)/includes/*.c)
+ SMALL = -DSYNTHETIC1
+diff --git a/cortex/srr/includes/photonTiming.c b/cortex/srr/includes/photonTiming.c
+index 0a63d2f..90518bf 100644
+--- a/cortex/srr/includes/photonTiming.c
++++ b/cortex/srr/includes/photonTiming.c
+@@ -9,46 +9,26 @@ Author: Sravanthi Kota Venkata
+ #include <assert.h>
+ #include <math.h>
+ 
+-#include "timingUtils.h"
+-
+ unsigned int* photonStartTiming()
+ {
+-	unsigned int *array;
+-
+-    array = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-	magic_timing_begin(array[0], array[1]);
+-    return array;
++    return NULL;
+ }
+ 
+ unsigned int * photonReportTiming(unsigned int* startCycles,unsigned int* endCycles)
+ {
+ 
+-    unsigned int *elapsed;
+-    elapsed = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-	unsigned long long start = (((unsigned long long)0x0) | startCycles[0]) << 32 | startCycles[1];
+-	unsigned long long end = (((unsigned long long)0x0) | endCycles[0]) << 32 | endCycles[1];
+-	unsigned long long diff = end - start;
+-	elapsed[0] = (unsigned int)(diff >> 32);
+-	elapsed[1] = (unsigned int)(diff & 0xffffffff);
+-    return elapsed;
++    return NULL;
+ 
+ }
+ 
+ void photonPrintTiming(unsigned int * elapsed)
+ {
+-    if(elapsed[1] == 0)
+-	    printf("Cycles elapsed\t\t- %u\n\n", elapsed[0]);
+-    else
+-	    printf("Cycles elapsed\t\t- %u%u\n\n", elapsed[1], elapsed[0]);
++    return;
+ }
+ 
+ unsigned int * photonEndTiming()
+ {
+-	unsigned int *array;
+-    array = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-
+-	magic_timing_begin(array[0], array[1]);
+-	return array;
++    return NULL;
+ }
+ 
+ 
+diff --git a/cortex/svd3/Makefile b/cortex/svd3/Makefile
+index 032d2d4..6fb8d1e 100644
+--- a/cortex/svd3/Makefile
++++ b/cortex/svd3/Makefile
+@@ -1,28 +1,28 @@
+ .SUFFIXES: .c .u
+ CC= gcc
+-CFLAGS  = 
+-LDFLAGS = -lm
++CFLAGS  = $(PAC_FLAGS)
++LDFLAGS = -lm $(PAC_OBJ)
+ 
+ 
+ 
+ INCLUDES = -I$(CURDIR)/includes -I$(CURDIR)
+-COMPILE_C = $(CC) $(CFLAGS) -O2 $(INCLUDES)
++COMPILE_C = $(CC) $(CFLAGS) -O0 $(INCLUDES)
+ COMMON_SRC := $(wildcard $(CURDIR)/*.c)
+ C_SRC := $(wildcard $(CURDIR)/includes/*.c)
+ 
+ compile:
+-	gcc -lm main.c common/*.c $(C_SRC) svd.c svd2.c sortSVDResult.c $(LDFLAGS)
++	$(COMPILE_C) -lm main.c common/*.c $(C_SRC) svd.c svd2.c sortSVDResult.c $(LDFLAGS)
+ 
+ run-all: run-small run-medium run-large
+ 
+ run-small:
+-	-./a.out small.txt 2>&1 | tee ../results/svd.small
++	./a.out small.txt 2>&1 | tee ../results/svd.small
+ 
+ run-medium:
+-	-./a.out med.txt 2>&1 | tee ../results/svd.medium
++	./a.out med.txt 2>&1 | tee ../results/svd.medium
+ 
+ run-large:
+-	-./a.out large.txt 2>&1 | tee ../results/svd.large
++	./a.out large.txt 2>&1 | tee ../results/svd.large
+ 
+ clean:
+ 	-rm a.out
+diff --git a/cortex/svd3/includes/photonTiming.c b/cortex/svd3/includes/photonTiming.c
+index 0a63d2f..90518bf 100644
+--- a/cortex/svd3/includes/photonTiming.c
++++ b/cortex/svd3/includes/photonTiming.c
+@@ -9,46 +9,26 @@ Author: Sravanthi Kota Venkata
+ #include <assert.h>
+ #include <math.h>
+ 
+-#include "timingUtils.h"
+-
+ unsigned int* photonStartTiming()
+ {
+-	unsigned int *array;
+-
+-    array = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-	magic_timing_begin(array[0], array[1]);
+-    return array;
++    return NULL;
+ }
+ 
+ unsigned int * photonReportTiming(unsigned int* startCycles,unsigned int* endCycles)
+ {
+ 
+-    unsigned int *elapsed;
+-    elapsed = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-	unsigned long long start = (((unsigned long long)0x0) | startCycles[0]) << 32 | startCycles[1];
+-	unsigned long long end = (((unsigned long long)0x0) | endCycles[0]) << 32 | endCycles[1];
+-	unsigned long long diff = end - start;
+-	elapsed[0] = (unsigned int)(diff >> 32);
+-	elapsed[1] = (unsigned int)(diff & 0xffffffff);
+-    return elapsed;
++    return NULL;
+ 
+ }
+ 
+ void photonPrintTiming(unsigned int * elapsed)
+ {
+-    if(elapsed[1] == 0)
+-	    printf("Cycles elapsed\t\t- %u\n\n", elapsed[0]);
+-    else
+-	    printf("Cycles elapsed\t\t- %u%u\n\n", elapsed[1], elapsed[0]);
++    return;
+ }
+ 
+ unsigned int * photonEndTiming()
+ {
+-	unsigned int *array;
+-    array = (unsigned int*)malloc(sizeof(unsigned int)*2);
+-
+-	magic_timing_begin(array[0], array[1]);
+-	return array;
++    return NULL;
+ }
+ 
+ 
