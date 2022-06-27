@@ -14,26 +14,24 @@ import re
 import csv
 import toml
 
-DEST = '.'
-
-PAC_SW_DIR = os.path.abspath('../sw')
-PAC_SW_BIN = os.path.join(PAC_SW_DIR, 'pac-sw')
-
 # Plugin artefacts
 PLUGIN_DIR	= os.path.abspath('../gcc')
 PLUGIN_DLL	= os.path.join(PLUGIN_DIR, 'pac_sw_plugin.so')
-PAC_OBJ		= os.path.join(PLUGIN_DIR, 'map_device.o')
 
-# Plugin flags for non-PAC builds
-PAC_ARGS_BASE = { 'init-func': 'map_device', # Include the init function for
-                  'sign-scope': 'nil' }      # fair measurements
+KPACD_DIR	= "/sys/kernel/debug/kpacd"
+KPACD_NR_PAC	= os.path.join(KPACD_DIR, "nr_pac");
+KPACD_NR_AUT	= os.path.join(KPACD_DIR, "nr_aut");
 
 # Plugin flags for PAC builds
-PAC_ARGS_INST = { 'init-func': 'map_device',
-                  'sign-scope': 'std' }
-
+PAC_ARGS_INST = { 'sign-scope': 'std' }
 
 verbose = False
+
+def get_attr(attr):
+    val = 0
+    with open(attr) as f:
+        val = int(f.read())
+    return val
 
 class Benchmark:
     def __init__(self, name, j):
@@ -60,6 +58,8 @@ class Benchmark:
 
     # Measure average run duration of the benchmark
     def meas(self):
+        nr_pac_0 = get_attr(KPACD_NR_PAC)
+        nr_aut_0 = get_attr(KPACD_NR_AUT)
         diff = np.zeros(self.samples)
 
         cmd = self.do_run
@@ -88,33 +88,14 @@ class Benchmark:
         sys.stdout.write(f'{self.name}: {mean:#.9f} ({rstd:#.3f} %); '
                          f'{masked_count} outliers rejected\n')
 
-        return masked
+        nr_pac = get_attr(KPACD_NR_PAC) - nr_pac_0
+        nr_aut = get_attr(KPACD_NR_AUT) - nr_aut_0
 
-    # Retrieve the amount of authentications performed in single run
-    def auths(self):
-        pac_sw = sp.Popen([PAC_SW_BIN], stdout = sp.PIPE);
-        try:
-            print(f'Counting {self.name} authentications...')
-            self.do(self.do_run)
-        except:
-            # Don't leave daemons running in the background
-            pac_sw.terminate()
-            raise
-
-        pac_sw.send_signal(signal.SIGINT)
-        pac_sw.wait()
-
-        outp = str(pac_sw.stdout.read())
-        pac_sw.stdout.close()
-
-        pac = re.findall('pac: (\d+)', outp)[0]
-        aut = re.findall('aut: (\d+)', outp)[0]
-
-        if pac != aut:
+        if nr_pac != nr_aut:
             # Something weird is up
-            raise RuntimeError(f'PAC and AUT do not match ({pac} != {aut}).')
+            raise RuntimeError(f'PAC and AUT do not match ({nr_pac} != {nr_aut}).')
 
-        return pac
+        return masked, nr_pac//(self.warmup+self.samples)
 
 class Suite:
     def __init__(self, path):
@@ -126,20 +107,16 @@ class Suite:
             self.benchmarks.append(Benchmark(b, j))
 
     # Build the benchmarks with specified plugin arguments, compile
-    # instrumentation statistics if needed
-    def build(self, args={}, dump=False):
+    # instrumentation statistics
+    def build(self, args=None):
         stat = {}
 
         with tempfile.NamedTemporaryFile(mode='r+') as tmp:
-            if dump:
+            if args:
                 args['inst-dump'] = tmp.name
-
-            # Set relevant environment variables
-            os.environ['PAC_OBJ'] = PAC_OBJ
-
-            pac_flags = os.environ.get('PAC_FLAGS', '') + \
-                ' ' + plugin_args(PLUGIN_DLL, args)
-            os.environ['PAC_FLAGS'] = pac_flags
+                os.environ['PAC_FLAGS'] = plugin_args(PLUGIN_DLL, args)
+            else:
+                os.environ['PAC_FLAGS'] = ""
 
             for b in self.benchmarks:
                 stat[b.name] = [0, 0]
@@ -157,17 +134,11 @@ class Suite:
 
     def meas(self):
         results = {}
+        auths = {}
         for b in self.benchmarks:
-            results[b.name] = b.meas()
+            results[b.name], auths[b.name] = b.meas()
 
-        return results
-
-    def auths(self):
-        results = {}
-        for b in self.benchmarks:
-            results[b.name] = b.auths()
-
-        return results
+        return results, auths
 
 # Construct gcc flags for plugin and its arguments
 def plugin_args(plugin, args):
@@ -211,14 +182,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compiler and run PAC-SW benchmarks.')
     parser.add_argument('suite', metavar='SUITE', nargs=1, type=str,
                         help='input file with benchmark suite description')
-    parser.add_argument('dest', metavar='OUTPUT', nargs='?', default=DEST, type=str,
-                        help=f'destination directory for results (default: {DEST})')
-    parser.add_argument('-b', action='store_true', help='gather instrumentation statistics')
+    parser.add_argument('dest', metavar='OUTPUT', nargs=1, type=str,
+                        help=f'destination directory for results')
     parser.add_argument('-r', action='store_true', help='retain raw measurement data')
     parser.add_argument('-v', action='store_true', help='display commands when executing')
     args = parser.parse_args()
 
     verbose = args.v
+    dest = args.dest[0]
 
     # Compile benchmarking utility module
     sp.check_call(['make', '-C', '.'])
@@ -228,30 +199,24 @@ if __name__ == '__main__':
     sp.check_call(['make', '-C', PLUGIN_DIR])
 
     # Make sure output directory exists
-    os.makedirs(args.dest, exist_ok=True)
+    os.makedirs(dest, exist_ok=True)
 
     suite = Suite(args.suite[0])
 
-    # Do we gather build statistics this run?
-    if args.b:
-        inst = suite.build(PAC_ARGS_INST, True)
-        auths = suite.auths()
-
-        dump_inst(os.path.join(args.dest, 'build.csv'), inst, auths)
-        exit(0)
-
     # Pure run without PAC
-    suite.build(PAC_ARGS_BASE)
-    data = suite.meas()
+    suite.build()
+    data, _ = suite.meas()
 
-    dump_stat(os.path.join(args.dest, 'nopac.csv'), data)
+    dump_stat(os.path.join(dest, 'nopac.csv'), data)
     if args.r:
-        dump_raw(os.path.join(args.dest, 'nopac_raw.csv'), data)
+        dump_raw(os.path.join(dest, 'nopac_raw.csv'), data)
 
     # PAC-instrumented run
-    suite.build(PAC_ARGS_INST)
-    data = suite.meas()
+    inst = suite.build(PAC_ARGS_INST)
+    data, auths = suite.meas()
 
-    dump_stat(os.path.join(args.dest, 'pac.csv'), data)
+    dump_stat(os.path.join(dest, 'pac.csv'), data)
     if args.r:
-        dump_raw(os.path.join(args.dest, 'pac_raw.csv'), data)
+        dump_raw(os.path.join(dest, 'pac_raw.csv'), data)
+
+    dump_inst(os.path.join(dest, 'build.csv'), inst, auths)
