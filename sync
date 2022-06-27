@@ -2,7 +2,6 @@
 
 set -e
 
-host="pac"
 src="."
 dest="~/pac-sw" # watch out for var. expansion
 
