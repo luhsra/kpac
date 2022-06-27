@@ -12,8 +12,6 @@ compile_commands.json
 bench/do_bench
 gcc/test
 gcc/asm.h
-sw/pac-sw
-sw/test
 __pycache__
 
 !.gitattributes

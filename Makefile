@@ -1,6 +1,6 @@
 TOPTARGETS := all clean
 
-SUBDIRS := gcc sw bench
+SUBDIRS := gcc bench
 
 $(TOPTARGETS): $(SUBDIRS)
 $(SUBDIRS):
