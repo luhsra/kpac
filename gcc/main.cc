@@ -454,6 +454,18 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
         }
     }
 
+    // Disable incompatible optimizations.  Multiple epilogues cause the code
+    // size to inflate too much, the optimization value is questionable:
+    flag_reorder_blocks_and_partition = 0;
+    flag_reorder_blocks = 0;
+
+    // Temporary registers might get clobbered before prologue in case of
+    // delayed frame setup:
+    flag_shrink_wrap = 0;
+
+    // Note that tail and sibling call optimization inserts additional epilogues
+    // too: flag_optimize_sibling_calls;
+
     // Register info about this plugin.
     register_callback(PLUGIN_NAME, PLUGIN_INFO, NULL, &inst_plugin_info);
 
