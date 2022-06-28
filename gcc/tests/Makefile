@@ -4,13 +4,13 @@ TEST_BINS := $(TEST_SRCS:.c=)
 PLUGIN_DIR ?= ..
 PLUGIN ?= $(PLUGIN_DIR)/pac_sw_plugin.so
 
-SIGN_SCOPE ?=
+PAC_SCOPE ?=
 INIT_OBJ ?=
-INIT_FUNC ?= $(basename $(notdir $(INIT_OBJ)))
+INIT_FN ?= $(basename $(notdir $(INIT_OBJ)))
 
 PLUGIN_FLAGS = -fplugin=./$(PLUGIN) \
-	$(if $(SIGN_SCOPE), -fplugin-arg-pac_sw_plugin-sign-scope=$(SIGN_SCOPE)) \
-	$(if $(INIT_FUNC), -fplugin-arg-pac_sw_plugin-init-func=$(INIT_FUNC))
+	$(if $(PAC_SCOPE), -fplugin-arg-pac_sw_plugin-scope=$(PAC_SCOPE)) \
+	$(if $(INIT_FN), -fplugin-arg-pac_sw_plugin-init=$(INIT_FN))
 
 LDFLAGS = -pthread
 

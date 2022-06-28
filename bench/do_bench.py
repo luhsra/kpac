@@ -23,7 +23,7 @@ KPACD_NR_PAC	= os.path.join(KPACD_DIR, "nr_pac");
 KPACD_NR_AUT	= os.path.join(KPACD_DIR, "nr_aut");
 
 # Plugin flags for PAC builds
-PAC_ARGS_INST = { 'sign-scope': 'std' }
+PAC_ARGS_INST = { 'scope': 'std' }
 
 verbose = False
 
@@ -113,7 +113,7 @@ class Suite:
 
         with tempfile.NamedTemporaryFile(mode='r+') as tmp:
             if args:
-                args['inst-dump'] = tmp.name
+                args['dump'] = tmp.name
                 os.environ['PAC_FLAGS'] = plugin_args(PLUGIN_DLL, args)
             else:
                 os.environ['PAC_FLAGS'] = ""

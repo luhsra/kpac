@@ -18,7 +18,7 @@
 #define PLUGIN_HELP PLUGIN_NAME ": Instrumentation for Software-Emulated PAC."
 #define PLUGIN_GCC_REQ "10.2.1" // Required GCC version
 
-#define EXCLUDE_ATTR "pac_exclude"
+#define SCOPE_ATTR "pac_scope"
 
 #define err(fmt, ...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #ifdef DEBUG
@@ -39,14 +39,13 @@ enum { PROLOGUE, EPILOGUE };
 
 static const char *init_function = NULL;
 
-enum {
-    SIGN_SCOPE_NIL = 0,
-    SIGN_SCOPE_STD, /* exclude functions without protected declarations */
-    SIGN_SCOPE_EXT, /* like std but include leaf functions on aarch64 */
-    SIGN_SCOPE_ALL, /* authenticate everything */
-};
+#define SIGN_SCOPE_LEAF		0x1 /* include leaf functions on aarch64 */
+#define SIGN_SCOPE_STD		0x2 /* include functions with protected declarations */
+#define SIGN_SCOPE_EXT		0x4 /* include even functions where stack overflow is unlikely */
 
-static int pac_sign_scope = SIGN_SCOPE_STD;
+#define SIGN_SCOPE_ALL		(SIGN_SCOPE_LEAF | SIGN_SCOPE_STD | SIGN_SCOPE_EXT)
+
+static int global_scope = SIGN_SCOPE_STD;
 
 static struct {
     int total;
@@ -60,7 +59,11 @@ static unsigned int execute_inst_pac(void);
 static unsigned int execute_init_pac(void);
 
 // Structure describing an attribute
-static struct attribute_spec exclude_attr = { .name = EXCLUDE_ATTR };
+static struct attribute_spec scope_attr = {
+    .name = SCOPE_ATTR,
+    .min_length = 1,
+    .max_length = 1,
+};
 
 // Metadata for the RTL instrumentation pass.  Attaches prologue and epilogue to
 // functions where required.
@@ -118,7 +121,7 @@ static pass_init_pac init_pass = pass_init_pac(g);
 // Plugin callback called during attribute registration.
 static void register_attributes(void *event_data, void *data)
 {
-    register_attribute(&exclude_attr);
+    register_attribute(&scope_attr);
 }
 
 // Attach initialization function to main
@@ -151,16 +154,17 @@ static unsigned int execute_init_pac(void)
 }
 
 #ifdef GCC_AARCH64_H
-static bool aarch64_signing_required(void)
+static bool aarch64_signing_required(int scope)
 {
     /* This function should only be called after frame laid out. */
     gcc_assert(cfun->machine->frame.laid_out);
 
-    /* If signing scope is standard, we only sign a leaf function
-       if its LR is pushed onto stack. */
-    return (pac_sign_scope >= SIGN_SCOPE_EXT ||
-            (pac_sign_scope == SIGN_SCOPE_STD &&
-             known_ge(cfun->machine->frame.reg_offset[LR_REGNUM], 0)));
+    if (scope & SIGN_SCOPE_LEAF)
+        return true;
+
+    /* If the signing scope does not include leaf functions, we only sign a
+       function if its LR is pushed onto stack. */
+    return known_ge(cfun->machine->frame.reg_offset[LR_REGNUM], 0);
 }
 #endif
 
@@ -188,18 +192,66 @@ static bool has_protected_decls(tree decl_initial)
     return false;
 }
 
+static unsigned int str_scope(const char *s)
+{
+    const char *sep = "+";
+    char *sdup, *token;
+    unsigned int scope = 0;
+
+    if (!strcmp(s, "nil"))
+        return 0;
+    if (!strcmp(s, "all"))
+        return SIGN_SCOPE_ALL;
+
+    sdup = xstrdup(s);
+    token = strtok(sdup, sep);
+
+    while (token != NULL) {
+        if (!strcmp(token, "leaf"))
+            scope |= SIGN_SCOPE_LEAF;
+        else if (!strcmp(token, "std"))
+            scope |= SIGN_SCOPE_STD;
+        else if (!strcmp(token, "ext"))
+            scope |= SIGN_SCOPE_EXT;
+        else {
+            scope = -1;
+            break;
+        }
+
+        token = strtok(NULL, sep);
+    }
+
+    free(sdup);
+    return scope;
+}
+
+static int get_current_scope(void)
+{
+    int scope = global_scope;
+    tree decl = current_function_decl;
+    tree alias = lookup_attribute(SCOPE_ATTR, DECL_ATTRIBUTES(decl));
+
+    if (!alias)
+        return scope;
+
+    const char *val = TREE_STRING_POINTER(TREE_VALUE(TREE_VALUE(alias)));
+    scope = str_scope(val);
+    if (scope == -1)
+        error("invalid %qs argument '%s'", SCOPE_ATTR, val);
+
+    return scope;
+}
+
 static bool signing_required(void)
 {
-    tree attrlist = DECL_ATTRIBUTES(current_function_decl);
-    tree attr = lookup_attribute(EXCLUDE_ATTR, attrlist);
+    int scope = get_current_scope();
+
+    if (!scope)
+        return false;
 
     // Do not instrument init-related functions
     if (init_function && (strcmp(CURRENT_FN_NAME(), init_function) == 0 ||
                           strcmp(CURRENT_FN_NAME(), "main") == 0))
-        return false;
-
-    // Do not instrument functions with the exclude attribute
-    if (attr != NULL_TREE)
         return false;
 
     /* Turn return address signing off in any function that uses
@@ -214,17 +266,18 @@ static bool signing_required(void)
         return false;
 
 #ifdef GCC_AARCH64_H
-    if (!aarch64_signing_required())
+    if (!aarch64_signing_required(scope))
         return false;
 #endif
 
-    if (pac_sign_scope != SIGN_SCOPE_ALL) {
-        // Omit functions where stack overflow is unlikely
-        if (!has_protected_decls(DECL_INITIAL(current_function_decl)))
-            return false;
-    }
+    if (scope & SIGN_SCOPE_EXT)
+        return true;
 
-    return true;
+    // Omit functions where stack overflow is unlikely
+    if (scope & SIGN_SCOPE_STD)
+        return has_protected_decls(DECL_INITIAL(current_function_decl));
+
+    return false;
 }
 
 /* Generate RTL for an asm statement (explicit assembler code).
@@ -378,29 +431,25 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
         return 1;
     }
 
+    // Parse arguments
     for (int i = 0; i < info->argc; i++) {
         const char *key = info->argv[i].key;
         const char *value = info->argv[i].value;
 
-        if (!strcmp(key, "sign-scope")) {
-            if (!strcmp(value, "nil"))
-                pac_sign_scope = SIGN_SCOPE_NIL;
-            else if (!strcmp(value, "std"))
-                pac_sign_scope = SIGN_SCOPE_STD;
-            else if (!strcmp(value, "ext"))
-                pac_sign_scope = SIGN_SCOPE_EXT;
-            else if (!strcmp(value, "all"))
-                pac_sign_scope = SIGN_SCOPE_ALL;
-            else {
-                err(PLUGIN_NAME ": Invalid sign scope `%s'.\n", value);
+        if (!strcmp(key, "scope")) {
+            global_scope = str_scope(value);
+            if (global_scope == -1) {
+                err(PLUGIN_NAME ": Invalid scope '%s'.\n", value);
                 return 1;
             }
-        } else if (!strcmp(key, "init-func")) {
-            init_function = value;
-        } else if (!strcmp(key, "inst-dump")) {
-            inst_stat_file = value;
+        } else if (!strcmp(key, "init")) {
+            if (value[0])
+                init_function = value;
+        } else if (!strcmp(key, "dump")) {
+            if (value[0])
+                inst_stat_file = value;
         } else {
-            err(PLUGIN_NAME ": Unknown argument `%s'.\n", key);
+            err(PLUGIN_NAME ": Unknown argument '%s'.\n", key);
             return 1;
         }
     }
@@ -408,14 +457,12 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
     // Register info about this plugin.
     register_callback(PLUGIN_NAME, PLUGIN_INFO, NULL, &inst_plugin_info);
 
-    if (pac_sign_scope != SIGN_SCOPE_NIL) {
-        // Get called at attribute registration.
-        register_callback(PLUGIN_NAME, PLUGIN_ATTRIBUTES, register_attributes, NULL);
-        // Add our pass into the pass manager.
-        register_callback(PLUGIN_NAME, PLUGIN_PASS_MANAGER_SETUP, NULL, &pass_inst);
-        // Save statistics at the end.
-        register_callback(PLUGIN_NAME, PLUGIN_FINISH_UNIT, inst_stat_dump, NULL);
-    }
+    // Get called at attribute registration.
+    register_callback(PLUGIN_NAME, PLUGIN_ATTRIBUTES, register_attributes, NULL);
+    // Add our pass into the pass manager.
+    register_callback(PLUGIN_NAME, PLUGIN_PASS_MANAGER_SETUP, NULL, &pass_inst);
+    // Save statistics at the end.
+    register_callback(PLUGIN_NAME, PLUGIN_FINISH_UNIT, inst_stat_dump, NULL);
 
     if (init_function)
         register_callback(PLUGIN_NAME, PLUGIN_PASS_MANAGER_SETUP, NULL, &pass_init);
