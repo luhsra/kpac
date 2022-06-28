@@ -1,8 +1,11 @@
 ARCH ?= $(shell uname -m)
 TARGET_GCC = $(CROSS_COMPILE)gcc
 
-PROLOGUE ?= asm/$(ARCH)/prologue.S
-EPILOGUE ?= asm/$(ARCH)/epilogue.S
+ASM = asm
+
+PROLOGUE ?= $(ASM)/$(ARCH)/prologue.S
+EPILOGUE ?= $(ASM)/$(ARCH)/epilogue.S
+ASM_DEP = $(ASM)/common.h
 ASM_INC = asm.h
 
 PLUGIN = pac_sw_plugin.so
@@ -20,7 +23,7 @@ CXXFLAGS += -g -I$(GCC_PLUGINS_DIR)/include -fPIC -fno-rtti -DDEBUG -Wall -O2
 all: $(PLUGIN)
 
 # Preprocess assembler files before embedding
-$(ASM_INC): $(PROLOGUE) $(EPILOGUE)
+$(ASM_INC): $(PROLOGUE) $(EPILOGUE) $(ASM_DEP)
 	printf "\
 	static const char prologue_s[] = {\n\
 	$$(gcc -E $(PROLOGUE) | xxd -i), 0x00\n\
