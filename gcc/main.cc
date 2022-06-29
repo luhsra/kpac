@@ -324,31 +324,17 @@ static rtx expand_asm_loc(tree string, int vol, location_t locus)
     return body;
 }
 
-static bool insert_prologue(void)
+static void insert_prologue(void)
 {
     tree string = build_string(strlen(prologue_s), prologue_s);
     rtx body = expand_asm_loc(string, 1, prologue_location);
 
-    rtx_insn *insn = get_insns();
-    rtx_insn *last_frame_related = NULL;
-
-    while (insn && !(NOTE_P(insn) && NOTE_KIND(insn) == NOTE_INSN_PROLOGUE_END))
-        insn = NEXT_INSN(insn);
-
-    while (insn) {
-        if (RTX_FRAME_RELATED_P(insn))
-            last_frame_related = insn;
-        insn = PREV_INSN(insn);
-    }
-
-    if (last_frame_related) {
-        if (get_first_nonnote_insn() != last_frame_related)
-            warning(0, "prologue is not the first non-note RTL instruction");
-
-        emit_insn_before(body, last_frame_related);
-    }
-
-    return last_frame_related != NULL;
+    /*
+     * Insert the prologue as the first non-note instruction to avoid clobbering
+     * temporary registers used across the original prologue.  Disabling
+     * shrink-wrap ensures that the stack frame is set up for any code path.
+     */
+    emit_insn_before(body, get_first_nonnote_insn());
 }
 
 static bool insert_epilogue(void)
