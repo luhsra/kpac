@@ -184,11 +184,13 @@ if __name__ == '__main__':
                         help='input file with benchmark suite description')
     parser.add_argument('dest', metavar='OUTPUT', nargs=1, type=str,
                         help=f'destination directory for results')
-    parser.add_argument('-r', action='store_true', help='retain raw measurement data')
-    parser.add_argument('-v', action='store_true', help='display commands when executing')
+    parser.add_argument('--skip-nopac', action='store_true', help='skip unprotected benchmarks')
+    parser.add_argument('--skip-pac', action='store_true', help='skip protected benchmarks')
+    parser.add_argument('-r', '--raw', action='store_true', help='retain raw measurement data')
+    parser.add_argument('-v', '--verbose', action='store_true', help='display commands when executing')
     args = parser.parse_args()
 
-    verbose = args.v
+    verbose = args.verbose
     dest = args.dest[0]
 
     # Compile benchmarking utility module
@@ -204,19 +206,21 @@ if __name__ == '__main__':
     suite = Suite(args.suite[0])
 
     # Pure run without PAC
-    suite.build()
-    data, _ = suite.meas()
+    if not args.skip_nopac:
+        suite.build()
+        data, _ = suite.meas()
 
-    dump_stat(os.path.join(dest, 'nopac.csv'), data)
-    if args.r:
-        dump_raw(os.path.join(dest, 'nopac_raw.csv'), data)
+        dump_stat(os.path.join(dest, 'nopac.csv'), data)
+        if args.raw:
+            dump_raw(os.path.join(dest, 'nopac_raw.csv'), data)
 
     # PAC-instrumented run
-    inst = suite.build(PAC_ARGS_INST)
-    data, auths = suite.meas()
+    if not args.skip_pac:
+        inst = suite.build(PAC_ARGS_INST)
+        data, auths = suite.meas()
 
-    dump_stat(os.path.join(dest, 'pac.csv'), data)
-    if args.r:
-        dump_raw(os.path.join(dest, 'pac_raw.csv'), data)
+        dump_stat(os.path.join(dest, 'pac.csv'), data)
+        if args.raw:
+            dump_raw(os.path.join(dest, 'pac_raw.csv'), data)
 
-    dump_inst(os.path.join(dest, 'build.csv'), inst, auths)
+        dump_inst(os.path.join(dest, 'build.csv'), inst, auths)
