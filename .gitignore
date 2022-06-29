@@ -1,3 +1,10 @@
+# Ignore all
+*
+# Unignore all with extensions
+!*.*
+# Unignore all dirs
+!*/
+
 # Dotfiles
 .*
 
@@ -7,10 +14,6 @@
 *.d
 *.so
 compile_commands.json
-
-# Binaries
-bench/do_bench
-gcc/test
 gcc/asm.h
 __pycache__
 
