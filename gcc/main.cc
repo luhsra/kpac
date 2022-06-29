@@ -341,8 +341,12 @@ static bool insert_prologue(void)
         insn = PREV_INSN(insn);
     }
 
-    if (last_frame_related)
+    if (last_frame_related) {
+        if (get_first_nonnote_insn() != last_frame_related)
+            warning(0, "prologue is not the first non-note RTL instruction");
+
         emit_insn_before(body, last_frame_related);
+    }
 
     return last_frame_related != NULL;
 }
