@@ -19,8 +19,8 @@ PLUGIN_DIR	= os.path.abspath('../gcc')
 PLUGIN_DLL	= os.path.join(PLUGIN_DIR, 'pac_sw_plugin.so')
 
 KPACD_DIR	= "/sys/kernel/debug/kpacd"
-KPACD_NR_PAC	= os.path.join(KPACD_DIR, "nr_pac");
-KPACD_NR_AUT	= os.path.join(KPACD_DIR, "nr_aut");
+KPACD_NR_PAC	= os.path.join(KPACD_DIR, "nr_pac")
+KPACD_NR_AUT	= os.path.join(KPACD_DIR, "nr_aut")
 
 # Plugin flags for PAC builds
 PAC_ARGS_INST = { 'scope': 'std' }
@@ -41,7 +41,7 @@ class Benchmark:
         # from the toplevel
         b = j['benchmarks'][name]
         self.path = b['path']
-        self.warmup = b.get('warmup', j.get('warmup', 0))
+        self.warmup = b.get('warmup', j['warmup'])
         self.samples = b.get('samples', j['samples'])
         self.do_run = b.get('do_run', j['do_run'])
         self.do_build = b.get('do_build', j['do_build'])
@@ -167,7 +167,7 @@ def dump_raw(f, data):
         maxlen = max([len(i) for i in v])
         w.writerow(data.keys())
         for i in range(maxlen):
-            w.writerow([j[i] if i < len(j) else None for j in v])
+            w.writerow([j.data[i] if i < len(j) else None for j in v])
 
 # Dump build instrumentation facts
 def dump_inst(f, inst, auths):
@@ -184,9 +184,8 @@ if __name__ == '__main__':
                         help='input file with benchmark suite description')
     parser.add_argument('dest', metavar='OUTPUT', nargs=1, type=str,
                         help=f'destination directory for results')
-    parser.add_argument('--skip-nopac', action='store_true', help='skip unprotected benchmarks')
-    parser.add_argument('--skip-pac', action='store_true', help='skip protected benchmarks')
-    parser.add_argument('-r', '--raw', action='store_true', help='retain raw measurement data')
+    parser.add_argument('--skip-baseline', action='store_true', help='skip baseline benchmarks')
+    parser.add_argument('--skip-pac', action='store_true', help='skip PAC-protected benchmarks')
     parser.add_argument('-v', '--verbose', action='store_true', help='display commands when executing')
     args = parser.parse_args()
 
@@ -206,13 +205,12 @@ if __name__ == '__main__':
     suite = Suite(args.suite[0])
 
     # Pure run without PAC
-    if not args.skip_nopac:
+    if not args.skip_baseline:
         suite.build()
         data, _ = suite.meas()
 
-        dump_stat(os.path.join(dest, 'nopac.csv'), data)
-        if args.raw:
-            dump_raw(os.path.join(dest, 'nopac_raw.csv'), data)
+        dump_stat(os.path.join(dest, 'baseline.csv'), data)
+        dump_raw(os.path.join(dest, 'baseline_raw.csv'), data)
 
     # PAC-instrumented run
     if not args.skip_pac:
@@ -220,7 +218,5 @@ if __name__ == '__main__':
         data, auths = suite.meas()
 
         dump_stat(os.path.join(dest, 'pac.csv'), data)
-        if args.raw:
-            dump_raw(os.path.join(dest, 'pac_raw.csv'), data)
-
+        dump_raw(os.path.join(dest, 'pac_raw.csv'), data)
         dump_inst(os.path.join(dest, 'build.csv'), inst, auths)
