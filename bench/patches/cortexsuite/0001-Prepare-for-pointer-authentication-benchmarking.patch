@@ -1,24 +1,22 @@
 diff --git a/cortex/clustering/kmeans/Makefile b/cortex/clustering/kmeans/Makefile
-index 72a00a0..6c8b3b9 100644
+index 72a00a0..7d4dabb 100644
 --- a/cortex/clustering/kmeans/Makefile
 +++ b/cortex/clustering/kmeans/Makefile
-@@ -1,12 +1,12 @@
+@@ -1,12 +1,9 @@
  .SUFFIXES: .c .u
  CC= gcc
 -CFLAGS  = 
--LDFLAGS = -lm
-+CFLAGS  = $(PAC_FLAGS)
-+LDFLAGS = -lm $(PAC_OBJ)
+ LDFLAGS = -lm
  
- 
- 
+-
+-
  INCLUDES = -I$(CURDIR)/includes -I$(CURDIR)
 -COMPILE_C = $(CC) $(CFLAGS) -O2 $(INCLUDES)
-+COMPILE_C = $(CC) $(CFLAGS) -O0 $(INCLUDES)
++COMPILE_C = $(CC) $(CFLAGS) $(INCLUDES)
  COMMON_SRC := $(wildcard $(CURDIR)/*.c)
  C_SRC := $(wildcard $(CURDIR)/includes/*.c)
  SMALL = 
-@@ -28,13 +28,13 @@ large: $(C_SRC)
+@@ -28,13 +25,13 @@ large: $(C_SRC)
  	$(COMPILE_C) $(COMMON_SRC) $(C_SRC) $(CFLAGS) -o kmeans-large $(LDFLAGS)
  
  run-small:
@@ -91,26 +89,24 @@ index 0a63d2f..90518bf 100644
  
  
 diff --git a/cortex/clustering/spectral/Makefile b/cortex/clustering/spectral/Makefile
-index ec1d0c0..201e890 100644
+index ec1d0c0..05a5f70 100644
 --- a/cortex/clustering/spectral/Makefile
 +++ b/cortex/clustering/spectral/Makefile
-@@ -1,12 +1,12 @@
+@@ -1,12 +1,11 @@
  .SUFFIXES: .c .u
  CC= gcc
 -CFLAGS  = 
--LDFLAGS = -lm
-+CFLAGS  = $(PAC_FLAGS)
-+LDFLAGS = -lm $(PAC_OBJ)
+ LDFLAGS = -lm
  
  
  
  INCLUDES = -I$(CURDIR)/includes -I$(CURDIR)
 -COMPILE_C = $(CC) $(CFLAGS) -O2 $(INCLUDES)
-+COMPILE_C = $(CC) $(CFLAGS) -O0 $(INCLUDES)
++COMPILE_C = $(CC) $(CFLAGS) $(INCLUDES)
  COMMON_SRC := $(wildcard $(CURDIR)/*.c)
  C_SRC := $(wildcard $(CURDIR)/includes/*.c)
  SMALL = 
-@@ -28,13 +28,13 @@ large: $(C_SRC)
+@@ -28,13 +27,13 @@ large: $(C_SRC)
  	$(COMPILE_C) $(COMMON_SRC) $(C_SRC) $(CFLAGS) -o spc-large $(LDFLAGS)
  
  run-small:
@@ -183,27 +179,25 @@ index 0a63d2f..90518bf 100644
  
  
 diff --git a/cortex/lda/Makefile b/cortex/lda/Makefile
-index 0c94639..7dac479 100644
+index 0c94639..ed3d2de 100644
 --- a/cortex/lda/Makefile
 +++ b/cortex/lda/Makefile
-@@ -5,13 +5,13 @@ TOP_DIR = $(shell pwd)
+@@ -5,13 +5,12 @@ TOP_DIR = $(shell pwd)
  COMMON = $(TOP_DIR)/common
  
  CC= gcc
 -CFLAGS  = -O2
--LDFLAGS = -lm
-+CFLAGS  = $(PAC_FLAGS)
-+LDFLAGS = -lm $(PAC_OBJ)
+ LDFLAGS = -lm
  
  
  
  INCLUDES = -I$(CURDIR)/includes -I$(CURDIR)
 -COMPILE_C = $(CC) $(CFLAGS) -O2 $(INCLUDES)
-+COMPILE_C = $(CC) $(CFLAGS) -O0 $(INCLUDES)
++COMPILE_C = $(CC) $(CFLAGS) $(INCLUDES)
  COMMON_SRC := $(wildcard $(CURDIR)/*.c)
  C_SRC := $(wildcard $(CURDIR)/includes/*.c)
  
-@@ -30,13 +30,13 @@ large: $(C_SRC)
+@@ -30,13 +29,13 @@ large: $(C_SRC)
  	$(COMPILE_C) $(COMMON_SRC) $(C_SRC) $(CFLAGS) -o lda-large $(LDFLAGS)
  
  run-small:
@@ -305,27 +299,25 @@ index 56f08ae..ae3cfd6 100644
  double lda_inference(document*, lda_model*, double*, double**);
  double compute_likelihood(document*, lda_model*, double**, double*);
 diff --git a/cortex/liblinear/Makefile b/cortex/liblinear/Makefile
-index c89da97..9694ab3 100644
+index c89da97..ee3b14a 100644
 --- a/cortex/liblinear/Makefile
 +++ b/cortex/liblinear/Makefile
-@@ -1,13 +1,13 @@
+@@ -1,5 +1,4 @@
  CC ?= gcc
 -CFLAGS = -Wall -fPIC
-+CFLAGS = -w -fPIC $(PAC_FLAGS)
  LDFLAGS = -lm
--LIBS = blas/blas.a
-+LIBS = blas/blas.a $(PAC_OBJ)
+ LIBS = blas/blas.a
  SHVER = 1
- OS = $(shell uname)
+@@ -7,7 +6,7 @@ OS = $(shell uname)
  
  
  INCLUDES = -I$(CURDIR)/includes -I$(CURDIR)
 -COMPILE_C = $(CC) $(CFLAGS) -O2 $(INCLUDES)
-+COMPILE_C = $(CC) $(CFLAGS) -O0 $(INCLUDES)
++COMPILE_C = $(CC) $(CFLAGS) $(INCLUDES)
  COMMON_SRC := $(wildcard $(CURDIR)/*.c)
  C_SRC := $(wildcard $(CURDIR)/includes/*.c)
  
-@@ -31,13 +31,13 @@ blas/blas.a: blas/*.c blas/*.h
+@@ -31,13 +30,13 @@ blas/blas.a: blas/*.c blas/*.h
  	make -C blas OPTFLAGS='$(CFLAGS)' CC='$(CC)'
  
  run-small:
@@ -398,26 +390,24 @@ index 0a63d2f..90518bf 100644
  
  
 diff --git a/cortex/motion-estimation/Makefile b/cortex/motion-estimation/Makefile
-index 9cc5f0f..be87062 100644
+index 9cc5f0f..56c2a1f 100644
 --- a/cortex/motion-estimation/Makefile
 +++ b/cortex/motion-estimation/Makefile
-@@ -1,12 +1,12 @@
+@@ -1,12 +1,11 @@
  .SUFFIXES: .c .u
  CC= gcc
 -CFLAGS  = -O2
--LDFLAGS = -lm
-+CFLAGS  = $(PAC_FLAGS)
-+LDFLAGS = -lm $(PAC_OBJ)
+ LDFLAGS = -lm
  
  
  
  INCLUDES = -I$(CURDIR)/includes -I$(CURDIR)
 -COMPILE_C = $(CC) $(CFLAGS) -O2 $(INCLUDES)
-+COMPILE_C = $(CC) $(CFLAGS) -O0 $(INCLUDES)
++COMPILE_C = $(CC) $(CFLAGS) $(INCLUDES)
  COMMON_SRC := $(wildcard $(CURDIR)/*.c)
  C_SRC := $(wildcard $(CURDIR)/includes/*.c)
  SMALL = -DSYNTHETIC1
-@@ -28,13 +28,13 @@ large: $(C_SRC)
+@@ -28,13 +27,13 @@ large: $(C_SRC)
  	$(COMPILE_C) $(COMMON_SRC) $(C_SRC) $(LARGE) $(CFLAGS) -o me-large $(LDFLAGS)
  
  run-small:
@@ -490,26 +480,24 @@ index 0a63d2f..90518bf 100644
  
  
 diff --git a/cortex/pca/Makefile b/cortex/pca/Makefile
-index 474058f..6e95768 100644
+index 474058f..0d84bed 100644
 --- a/cortex/pca/Makefile
 +++ b/cortex/pca/Makefile
-@@ -1,12 +1,12 @@
+@@ -1,12 +1,11 @@
  .SUFFIXES: .c .u
  CC= gcc
 -CFLAGS  = 
--LDFLAGS = -lm
-+CFLAGS  = $(PAC_FLAGS)
-+LDFLAGS = -lm $(PAC_OBJ)
+ LDFLAGS = -lm
  
  
  
  INCLUDES = -I$(CURDIR)/includes -I$(CURDIR)
 -COMPILE_C = $(CC) $(CFLAGS) -O2 $(INCLUDES)
-+COMPILE_C = $(CC) $(CFLAGS) -O0 $(INCLUDES)
++COMPILE_C = $(CC) $(CFLAGS) $(INCLUDES)
  COMMON_SRC := $(wildcard $(CURDIR)/*.c)
  C_SRC := $(wildcard $(CURDIR)/includes/*.c)
  SMALL = 
-@@ -28,13 +28,13 @@ large: $(C_SRC)
+@@ -28,13 +27,13 @@ large: $(C_SRC)
  	$(COMPILE_C) $(COMMON_SRC) $(C_SRC) $(CFLAGS) -o pca-large $(LDFLAGS)
  
  run-small:
@@ -582,22 +570,19 @@ index 0a63d2f..90518bf 100644
  
  
 diff --git a/cortex/rbm/Makefile b/cortex/rbm/Makefile
-index 5b05b3b..5fa44ff 100644
+index 5b05b3b..a0cd9a6 100644
 --- a/cortex/rbm/Makefile
 +++ b/cortex/rbm/Makefile
-@@ -1,8 +1,9 @@
- CC = gcc
--LDFLAGS = -lm
-+LDFLAGS = -lm $(PAC_OBJ)
-+CFLAGS = $(PAC_FLAGS)
+@@ -2,7 +2,7 @@ CC = gcc
+ LDFLAGS = -lm
  
  INCLUDES = -I$(CURDIR)/includes -I$(CURDIR)
 -COMPILE_C = $(CC) $(CFLAGS) -O2 $(INCLUDES)
-+COMPILE_C = $(CC) $(CFLAGS) -O0 $(INCLUDES)
++COMPILE_C = $(CC) $(CFLAGS) $(INCLUDES)
  COMMON_SRC := $(wildcard $(CURDIR)/*.c)
  C_SRC := $(wildcard $(CURDIR)/includes/*.c)
  
-@@ -20,13 +21,13 @@ large: $(C_SRC)
+@@ -20,13 +20,13 @@ large: $(C_SRC)
  	$(COMPILE_C) $(COMMON_SRC) $(C_SRC) -DUSERS=100 -DTEST_USERS=100 -DMOVIES=100 -DLOOPS=200 -o rbm-large $(LDFLAGS)
  
  run-small:
@@ -670,12 +655,11 @@ index 0a63d2f..90518bf 100644
  
  
 diff --git a/cortex/sphinx/Makefile b/cortex/sphinx/Makefile
-index 266176e..089e13c 100644
+index 266176e..80de517 100644
 --- a/cortex/sphinx/Makefile
 +++ b/cortex/sphinx/Makefile
-@@ -1,16 +1,19 @@
-+CFLAGS = -O0 $(PAC_FLAGS)
-+LDFLAGS = -lm $(PAC_OBJ)
+@@ -1,16 +1,18 @@
++LDFLAGS = -lm
 +
  compile:
 -	gcc -I includes main.c includes/*.c pocketsphinx/*.c sphinxbase/fe/*.c sphinxbase/feat/*.c sphinxbase/lm/*.c sphinxbase/util/*.c -o sphinx -O2 -lm
@@ -753,22 +737,20 @@ index 0a63d2f..90518bf 100644
  
  
 diff --git a/cortex/srr/Makefile b/cortex/srr/Makefile
-index 7d08d85..142ace6 100644
+index 7d08d85..160ee32 100644
 --- a/cortex/srr/Makefile
 +++ b/cortex/srr/Makefile
-@@ -1,12 +1,12 @@
+@@ -1,12 +1,11 @@
  .SUFFIXES: .c .u
  CC= gcc
 -CFLAGS  = -O2
--LDFLAGS = -lm
-+CFLAGS  = -O0 $(PAC_FLAGS)
-+LDFLAGS = -lm $(PAC_OBJ)
+ LDFLAGS = -lm
  
  
  
  INCLUDES = -I$(CURDIR)/includes -I$(CURDIR)
 -COMPILE_C = $(CC) $(CFLAGS) -O2 $(INCLUDES)
-+COMPILE_C = $(CC) $(CFLAGS) -O0 $(INCLUDES)
++COMPILE_C = $(CC) $(CFLAGS) $(INCLUDES)
  COMMON_SRC := $(wildcard $(CURDIR)/*.c)
  C_SRC := $(wildcard $(CURDIR)/includes/*.c)
  SMALL = -DSYNTHETIC1
@@ -828,22 +810,20 @@ index 0a63d2f..90518bf 100644
  
  
 diff --git a/cortex/svd3/Makefile b/cortex/svd3/Makefile
-index 032d2d4..6fb8d1e 100644
+index 032d2d4..31f3932 100644
 --- a/cortex/svd3/Makefile
 +++ b/cortex/svd3/Makefile
-@@ -1,28 +1,28 @@
+@@ -1,28 +1,27 @@
  .SUFFIXES: .c .u
  CC= gcc
 -CFLAGS  = 
--LDFLAGS = -lm
-+CFLAGS  = $(PAC_FLAGS)
-+LDFLAGS = -lm $(PAC_OBJ)
+ LDFLAGS = -lm
  
  
  
  INCLUDES = -I$(CURDIR)/includes -I$(CURDIR)
 -COMPILE_C = $(CC) $(CFLAGS) -O2 $(INCLUDES)
-+COMPILE_C = $(CC) $(CFLAGS) -O0 $(INCLUDES)
++COMPILE_C = $(CC) $(CFLAGS) $(INCLUDES)
  COMMON_SRC := $(wildcard $(CURDIR)/*.c)
  C_SRC := $(wildcard $(CURDIR)/includes/*.c)
  
