@@ -37,7 +37,7 @@ shift $(( OPTIND - 1 ))
 tmpfile=$(mktemp)
 git ls-files --recurse-submodules > "$tmpfile"
 
-rsync -azP --files-from="$tmpfile" "$src"/ "$host":"$dest"
+rsync -azP --files-from="$tmpfile" --exclude "/sync" "$src"/ "$host":"$dest"
 
 rm "$tmpfile"
 
