@@ -1,7 +1,8 @@
 warmup = 5
 samples = 50
-do_build = "make clean && make compile"
-do_run = "make run-medium"
+
+build_cmd = "make clean && make compile \"CFLAGS=$CFLAGS\""
+run_cmd = "make run-medium"
 
 [benchmarks.liblinear]
 path = "cortexsuite/cortex/liblinear"
