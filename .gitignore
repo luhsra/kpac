@@ -20,3 +20,4 @@ __pycache__
 !.gitattributes
 !.gitignore
 !.gitmodules
+!data/.dir-locals.el
