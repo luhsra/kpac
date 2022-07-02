@@ -18,8 +18,6 @@ from versuchung.experiment import Experiment
 from versuchung.types import String
 from versuchung.files import File, CSV_File
 
-import timing # timing.so
-
 CUR_CPUFREQ  = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
 KPACD_DIR    = "/sys/kernel/debug/kpacd"
 KPACD_NR_PAC = os.path.join(KPACD_DIR, "nr_pac")
@@ -166,17 +164,19 @@ class Bench(Experiment):
             return String(f.read().strip())
 
     inputs = {
-        "suite":	String("tacle-bench"),
-        "cflags":	String("-O0"),
-        "scope":	String("std"),
-        "arch":		get_arch,
-        "cpumasks":	get_cpumasks,
-        "backend":	get_backend,
+        "suite":    String("tacle-bench"),
+        "cflags":   String("-O0"),
+        "scope":    String("std"),
+        "arch":     get_arch,
+        "cpumasks": get_cpumasks,
+        "backend":  get_backend,
     }
 
     outputs = {
-        "scaling_cur_freq":	File("scaling_cur_freq"),
-        "build": 		CSV_File("build.csv"), # Build facts
+        "scaling_cur_freq": File("scaling_cur_freq"),
+        "nopac":            File("nopac.npz"),
+        "pac":              File("pac.npz"),
+        "build":            CSV_File("build.csv"), # Build facts
     }
 
     def run(self):
@@ -188,7 +188,7 @@ class Bench(Experiment):
         # Baseline run without PAC
         suite.build_nopac(self.i.cflags.value)
         durs, _ = suite.meas()
-        np.savez_compressed("nopac.npz", **durs)
+        np.savez_compressed(self.o.nopac.path, **durs)
 
         # PAC-protected run
         args = {}
@@ -197,7 +197,7 @@ class Bench(Experiment):
 
         inst = suite.build_pac(self.i.cflags.value, args)
         durs, auths = suite.meas()
-        np.savez_compressed("pac.npz", **durs)
+        np.savez_compressed(self.o.pac.path, **durs)
 
         self.o.build.append(["name", "inst", "total", "auths"])
         for k in inst.keys():
@@ -210,8 +210,10 @@ class Bench(Experiment):
         return x
 
 if __name__ == "__main__":
-    import sys
-    experiment = Bench()
+    # Compile and import timing utility module timing.so
+    sp.check_call(["make", "-C", sys.path[0]])
+    import timing
 
+    experiment = Bench()
     dirname = experiment(sys.argv + ["-s"])
     print(dirname)
