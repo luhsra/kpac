@@ -6,6 +6,7 @@ import subprocess as sp
 import os, sys
 import tempfile
 import contextlib
+import re
 
 import csv
 import toml
@@ -52,6 +53,10 @@ def get_attr(attr):
     with open(attr) as f:
         val = int(f.read())
     return val
+
+def to_pascal_case(snake_str):
+    components = re.split("[_-]", snake_str)
+    return "".join(x.title() for x in components)
 
 class Benchmark:
     def __init__(self, name, j):
@@ -197,6 +202,12 @@ class Bench(Experiment):
         self.o.build.append(["name", "inst", "total", "auths"])
         for k in inst.keys():
             self.o.build.append([k, inst[k][0], inst[k][1], auths[k]])
+
+    def symlink_name(self):
+        x = f"{to_pascal_case(self.i.suite.value)}-{self.i.arch.value}-" + \
+            f"{self.i.backend.value}-{self.i.scope.value}-" + \
+            f"[{self.i.cflags.value}]-[{self.i.cpumasks.value}]"
+        return x
 
 if __name__ == "__main__":
     import sys
