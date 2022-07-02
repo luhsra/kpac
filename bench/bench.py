@@ -17,7 +17,7 @@ from versuchung.experiment import Experiment
 from versuchung.types import String
 from versuchung.files import File, CSV_File
 
-import bench # bench.so
+import timing # timing.so
 
 CUR_CPUFREQ  = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
 KPACD_DIR    = "/sys/kernel/debug/kpacd"
@@ -80,7 +80,7 @@ class Benchmark:
             for i in range(-self.warmup, self.samples):
                 sys.stdout.write(f"\r{self.name}: {i+1}/{self.samples:<12d}\r")
                 sys.stdout.flush()
-                dur = bench.run(["/bin/sh", "-c", self.run_cmd])
+                dur = timing.run(["/bin/sh", "-c", self.run_cmd])
                 if i >= 0:
                     durs[i] = dur
 

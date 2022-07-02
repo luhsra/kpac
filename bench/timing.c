@@ -81,7 +81,7 @@ static char **pylist_as_argv(PyObject *list)
     return argv;
 }
 
-static PyObject *bench_run(PyObject *self, PyObject *args)
+static PyObject *timing_run(PyObject *self, PyObject *args)
 {
     ((void) self);
     PyObject *list;
@@ -104,25 +104,25 @@ static PyObject *bench_run(PyObject *self, PyObject *args)
     return PyFloat_FromDouble(result);
 }
 
-static PyMethodDef BenchMethods[] = {
-    {"run",  bench_run, METH_VARARGS, "Run program and measure time."},
+static PyMethodDef TimingMethods[] = {
+    {"run",  timing_run, METH_VARARGS, "Run program and measure time."},
     {NULL, NULL, 0, NULL}, /* Sentinel */
 };
 
-static struct PyModuleDef benchmodule = {
+static struct PyModuleDef timingmodule = {
     PyModuleDef_HEAD_INIT,
-    "bench",   /* name of module */
+    "timing",  /* name of module */
     NULL,      /* module documentation, may be NULL */
     -1,        /* size of per-interpreter state of the module,
                   or -1 if the module keeps state in global variables. */
-    BenchMethods,
+    TimingMethods,
     NULL,
     NULL,
     NULL,
     NULL,
 };
 
-PyMODINIT_FUNC PyInit_bench(void)
+PyMODINIT_FUNC PyInit_timing(void)
 {
-    return PyModule_Create(&benchmodule);
+    return PyModule_Create(&timingmodule);
 }

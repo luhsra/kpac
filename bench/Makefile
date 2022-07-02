@@ -1,4 +1,4 @@
-TARGET = bench.so
+TARGET = timing.so
 SRC = $(TARGET:.so=.c)
 
 CFLAGS = -I/usr/include/python3.9 -Wall -Wextra -fPIC
