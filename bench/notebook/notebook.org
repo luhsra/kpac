@@ -1,0 +1,126 @@
+#+STARTUP: content
+#+PROPERTY: header-args:python :session *PAC-SW Notebook*
+
+* Init
+#+begin_src python :results none
+  import numpy as np
+  import pandas as pd
+  import matplotlib.pyplot as plt
+  from os import path
+
+  from versuchung.search import *
+
+  import sys
+  sys.path.append("../")
+  import bench
+
+  from tabulate import tabulate
+  def pd2org(df):
+      return tabulate(df, headers=df.columns, tablefmt='orgtbl')
+
+  query = {
+      "arch": "x86_64",
+      "cflags": "-O0",
+  }
+
+  exp = search_experiment(bench.Bench, "../data", query)
+  nopac_raw_orig = dict(np.load(exp.o.nopac.path))
+  pac_raw_orig = dict(np.load(exp.o.pac.path))
+
+  nopac_raw = nopac_raw_orig
+  pac_raw = pac_raw_orig
+
+  benchmarks = list(nopac_raw_orig.keys())
+
+  mask_outliers = True
+#+end_src
+
+** Remove outliers
+#+begin_src python :results value raw :noeval
+  def mask_std(v, n):
+      mean = v.mean()
+      std = v.std()
+
+      return np.ma.masked_outside(v, mean-n*std, mean+n*std)
+
+  masked_pd = pd.DataFrame(index=benchmarks)
+
+  nopac_raw = {k: mask_std(v, 2) for k, v in nopac_raw_orig.items()}
+  pac_raw = {k: mask_std(v, 2) for k, v in pac_raw_orig.items()}
+  masked_pd["masked_nopac"] = [ np.ma.count_masked(v) for v in nopac_raw.values() ]
+  masked_pd["masked_pac"] = [ np.ma.count_masked(v) for v in pac_raw.values() ]
+
+  pd2org(masked_pd)
+#+end_src
+
+** Plot
+#+begin_src python :results file :noeval
+  figure, axis = plt.subplots(len(benchmarks), 2, figsize=(40,80))
+
+  i = 0
+  for k, v in nopac_raw.items():
+      axis[i, 0].plot(v)
+      axis[i, 0].set_title(k)
+      i+=1
+
+  i = 0
+  for k, v in pac_raw.items():
+      axis[i, 1].plot(v)
+      axis[i, 1].set_title(k)
+      i+=1
+
+  f = "raw.pdf"
+  plt.savefig(f)
+  f
+#+end_src
+
+* Statistics
+** Functions
+#+begin_src python :results value raw
+  build = pd.read_csv(exp.o.build.path, index_col='name')
+  pd2org(build)
+#+end_src
+
+** PA enabled
+#+begin_src python :results value raw
+  pac = pd.DataFrame({
+      "mean": { k: v.mean() for k, v in pac_raw.items() },
+      "std": { k: v.std() for k, v in pac_raw.items() },
+      "min": { k: v.min() for k, v in pac_raw.items() },
+      "max": { k: v.max() for k, v in pac_raw.items() },
+  })
+
+  pac["rstd"] = pac["std"]/pac["mean"]
+  pac["rmax"] = pac["max"]/pac["mean"]-1
+  pac["rmin"] = 1-pac["min"]/pac["mean"]
+
+  pd2org(pac)
+#+end_src
+
+** PA disabled
+#+begin_src python :results value raw
+  nopac = pd.DataFrame({
+      "mean": { k: v.mean() for k, v in nopac_raw.items() },
+      "std": { k: v.std() for k, v in nopac_raw.items() },
+      "min": { k: v.min() for k, v in nopac_raw.items() },
+      "max": { k: v.max() for k, v in nopac_raw.items() },
+  })
+
+  nopac["rstd"] = nopac["std"]/nopac["mean"]
+  nopac["rmax"] = nopac["max"]/nopac["mean"]-1
+  nopac["rmin"] = 1-nopac["min"]/nopac["mean"]
+  
+  pd2org(nopac)
+#+end_src
+
+* Overhead
+#+begin_src python :results value raw
+  slowdown = pac["mean"] - nopac["mean"]
+
+  oh = pd.DataFrame()
+  oh["overhead"] = slowdown / nopac["mean"] * 100
+  oh["aut_s"] = 1/pac["mean"] * build["auths"]
+  oh["cycles"] = slowdown/build["auths"] * int(exp.o.scaling_cur_freq.value)*1e3
+
+  pd2org(oh)
+#+end_src
