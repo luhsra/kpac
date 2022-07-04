@@ -1,6 +1,6 @@
 [submodule "bench/tacle-bench"]
 	path = bench/tacle-bench
-	url = https://github.com/tacle/tacle-bench.git
+	url = https://github.com/iostapyshyn/tacle-bench.git
 	ignore = dirty
 
 [submodule "bench/cortexsuite"]
