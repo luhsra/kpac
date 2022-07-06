@@ -31,21 +31,24 @@
 
 int plugin_is_GPL_compatible;
 static struct plugin_info inst_plugin_info = {
-    .version  = PLUGIN_VERSION,
-    .help     = PLUGIN_HELP,
+    .version = PLUGIN_VERSION,
+    .help    = PLUGIN_HELP,
 };
 
 enum { PROLOGUE, EPILOGUE };
 
 static const char *init_function = NULL;
 
-#define SIGN_SCOPE_LEAF		0x1 /* include leaf functions on aarch64 */
-#define SIGN_SCOPE_STD		0x2 /* include functions with protected declarations */
-#define SIGN_SCOPE_EXT		0x4 /* include even functions where stack overflow is unlikely */
+enum {
+    SIGN_SCOPE_nil = 0,         // None
+    SIGN_SCOPE_char,            // Char/byte arrays bigger than ssp-buffer-size parameter
+    SIGN_SCOPE_array,           // + Arrays of any size and type
+    SIGN_SCOPE_strong,          // + Local variables that had their address taken
+    SIGN_SCOPE_all              // All functions
+};
 
-#define SIGN_SCOPE_ALL		(SIGN_SCOPE_LEAF | SIGN_SCOPE_STD | SIGN_SCOPE_EXT)
-
-static int global_scope = SIGN_SCOPE_STD;
+static int global_scope = SIGN_SCOPE_array;
+static bool include_leaf = false;
 
 static struct {
     int total;
@@ -154,97 +157,107 @@ static unsigned int execute_init_pac(void)
 }
 
 #ifdef GCC_AARCH64_H
-static bool aarch64_signing_required(int scope)
+static bool aarch64_signing_required(void)
 {
     /* This function should only be called after frame laid out. */
     gcc_assert(cfun->machine->frame.laid_out);
 
-    if (scope & SIGN_SCOPE_LEAF)
-        return true;
-
     /* If the signing scope does not include leaf functions, we only sign a
        function if its LR is pushed onto stack. */
-    return known_ge(cfun->machine->frame.reg_offset[LR_REGNUM], 0);
+    return include_leaf ||
+        known_ge(cfun->machine->frame.reg_offset[LR_REGNUM], 0);
 }
 #endif
 
-static bool is_protected_type(tree type)
+#define SPCT_HAS_LARGE_CHAR_ARRAY	0x1
+#define SPCT_HAS_SMALL_CHAR_ARRAY	0x2
+#define SPCT_HAS_ARRAY			0x4
+#define SPCT_HAS_AGGREGATE		0x8
+
+static unsigned int stack_protect_classify_type(tree type)
 {
+    unsigned int ret = 0;
+    tree t;
+
     switch (TREE_CODE(type)) {
     case ARRAY_TYPE:
-        return true;
+        t = TYPE_MAIN_VARIANT(TREE_TYPE(type));
+        if (t == char_type_node || t == signed_char_type_node || t == unsigned_char_type_node) {
+            unsigned HOST_WIDE_INT max = param_ssp_buffer_size;
+            unsigned HOST_WIDE_INT len;
+
+            if (!TYPE_SIZE_UNIT(type) || !tree_fits_uhwi_p(TYPE_SIZE_UNIT(type)))
+                len = max;
+            else
+                len = tree_to_uhwi(TYPE_SIZE_UNIT(type));
+
+            if (len < max)
+                ret = SPCT_HAS_SMALL_CHAR_ARRAY | SPCT_HAS_ARRAY;
+            else
+                ret = SPCT_HAS_LARGE_CHAR_ARRAY | SPCT_HAS_ARRAY;
+	} else
+            ret = SPCT_HAS_ARRAY;
+
+        break;
+
     case UNION_TYPE:
     case QUAL_UNION_TYPE:
     case RECORD_TYPE:
-        for (tree t = TYPE_FIELDS(type); t; t = TREE_CHAIN(t)) {
-            if (TREE_CODE(t) != FIELD_DECL)
-                continue;
-            if (is_protected_type(TREE_TYPE(t)))
-                return true;
-        }
+        ret = SPCT_HAS_AGGREGATE;
+        for (t = TYPE_FIELDS(type); t ; t = TREE_CHAIN(t))
+            if (TREE_CODE(t) == FIELD_DECL)
+                ret |= stack_protect_classify_type(TREE_TYPE(t));
         break;
+
     default:
-        return false;
+        break;
     }
 
-    return false;
+    return ret;
 }
 
 // Recursively check for existence of protected declarations (arrays).
-static bool has_protected_decls(tree decl_initial)
+static bool has_protected_decls(int scope, tree decl_initial)
 {
-    if (cfun->calls_alloca)
+    if (scope == SIGN_SCOPE_nil || !decl_initial)
+        return false;
+    if (scope == SIGN_SCOPE_all)
         return true;
 
-    if (!decl_initial)
-        return false;
-
     if (TREE_CODE(decl_initial) == VAR_DECL) {
-        if (is_protected_type(TREE_TYPE(decl_initial)))
+        unsigned int ret = stack_protect_classify_type(TREE_TYPE(decl_initial));
+        if (scope >= SIGN_SCOPE_char && (ret & SPCT_HAS_LARGE_CHAR_ARRAY))
+            return true;
+        else if (scope >= SIGN_SCOPE_array && (ret & SPCT_HAS_ARRAY))
+            return true;
+        else if (scope >= SIGN_SCOPE_strong && TREE_ADDRESSABLE(decl_initial))
             return true;
         else
-            return has_protected_decls(DECL_CHAIN(decl_initial));
+            return has_protected_decls(scope, DECL_CHAIN(decl_initial));
     }
 
     if (TREE_CODE(decl_initial) == BLOCK)
-        return (has_protected_decls(BLOCK_VARS(decl_initial)) ||
-                has_protected_decls(BLOCK_CHAIN(decl_initial)) ||
-                has_protected_decls(BLOCK_SUBBLOCKS(decl_initial)));
+        return (has_protected_decls(scope, BLOCK_VARS(decl_initial)) ||
+                has_protected_decls(scope, BLOCK_CHAIN(decl_initial)) ||
+                has_protected_decls(scope, BLOCK_SUBBLOCKS(decl_initial)));
 
     return false;
 }
 
-static unsigned int str_scope(const char *s)
+static int str_scope(const char *s)
 {
-    const char *sep = "+";
-    char *sdup, *token;
-    unsigned int scope = 0;
-
     if (!strcmp(s, "nil"))
-        return 0;
+        return SIGN_SCOPE_nil;
+    if (!strcmp(s, "char"))
+        return SIGN_SCOPE_char;
+    if (!strcmp(s, "array"))
+        return SIGN_SCOPE_array;
+    if (!strcmp(s, "strong"))
+        return SIGN_SCOPE_strong;
     if (!strcmp(s, "all"))
-        return SIGN_SCOPE_ALL;
+        return SIGN_SCOPE_all;
 
-    sdup = xstrdup(s);
-    token = strtok(sdup, sep);
-
-    while (token != NULL) {
-        if (!strcmp(token, "leaf"))
-            scope |= SIGN_SCOPE_LEAF;
-        else if (!strcmp(token, "std"))
-            scope |= SIGN_SCOPE_STD;
-        else if (!strcmp(token, "ext"))
-            scope |= SIGN_SCOPE_EXT;
-        else {
-            scope = -1;
-            break;
-        }
-
-        token = strtok(NULL, sep);
-    }
-
-    free(sdup);
-    return scope;
+    return -1;
 }
 
 static int get_current_scope(void)
@@ -268,7 +281,7 @@ static bool signing_required(void)
 {
     int scope = get_current_scope();
 
-    if (!scope)
+    if (scope == SIGN_SCOPE_nil)
         return false;
 
     // Do not instrument init-related functions
@@ -288,18 +301,13 @@ static bool signing_required(void)
         return false;
 
 #ifdef GCC_AARCH64_H
-    if (!aarch64_signing_required(scope))
+    if (!aarch64_signing_required())
         return false;
 #endif
 
-    if (scope & SIGN_SCOPE_EXT)
+    if (cfun->calls_alloca)
         return true;
-
-    // Omit functions where stack overflow is unlikely
-    if (scope & SIGN_SCOPE_STD)
-        return has_protected_decls(DECL_INITIAL(current_function_decl));
-
-    return false;
+    return has_protected_decls(scope, DECL_INITIAL(current_function_decl));
 }
 
 /* Generate RTL for an asm statement (explicit assembler code).
@@ -460,6 +468,15 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
         } else if (!strcmp(key, "dump")) {
             if (value[0])
                 inst_stat_file = value;
+        } else if (!strcmp(key, "leaf")) {
+            if (TOLOWER(value[0]) == 'y')
+                include_leaf = true;
+            else if (TOLOWER(value[0]) == 'n')
+                include_leaf = false;
+            else {
+                err(PLUGIN_NAME ": Unknown value for '%s'.\n", key);
+                return 1;
+            }
         } else {
             err(PLUGIN_NAME ": Unknown argument '%s'.\n", key);
             return 1;

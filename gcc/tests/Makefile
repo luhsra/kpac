@@ -4,13 +4,14 @@ TEST_BINS := $(TEST_SRCS:.c=)
 PLUGIN_DIR ?= ..
 PLUGIN ?= $(PLUGIN_DIR)/pac_sw_plugin.so
 
-PAC_SCOPE ?=
-INIT_OBJ ?=
-INIT_FN ?= $(basename $(notdir $(INIT_OBJ)))
+LEAF ?=
+SCOPE ?=
+INIT ?=
 
 PLUGIN_FLAGS = -fplugin=./$(PLUGIN) \
-	$(if $(PAC_SCOPE), -fplugin-arg-pac_sw_plugin-scope=$(PAC_SCOPE)) \
-	$(if $(INIT_FN), -fplugin-arg-pac_sw_plugin-init=$(INIT_FN))
+	$(if $(SCOPE), -fplugin-arg-pac_sw_plugin-scope=$(SCOPE)) \
+	$(if $(INIT), -fplugin-arg-pac_sw_plugin-init=$(INIT)) \
+	$(if $(LEAF), -fplugin-arg-pac_sw_plugin-leaf=$(LEAF))
 
 LDFLAGS = -pthread
 
@@ -26,10 +27,11 @@ MSG_FAIL := "  $(ESC_RED)FAIL\t%s ($$?)$(ESC_RST)\n"
 .PHONY: all
 all: $(TEST_BINS)
 
-$(PLUGIN):
+.FORCE:
+
+$(PLUGIN): .FORCE
 	$(MAKE) -C $(PLUGIN_DIR)
 
-.FORCE:
 $(TEST_BINS): %: %.c $(INIT_OBJ) $(PLUGIN) .FORCE
 	$(CC) $(CFLAGS) $(PLUGIN_FLAGS) -o $@ $< $(INIT_OBJ) $(LDFLAGS)
 	@./$@ && printf $(MSG_OK) $* || printf $(MSG_FAIL) $*;
