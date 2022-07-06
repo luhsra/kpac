@@ -168,6 +168,28 @@ static bool aarch64_signing_required(int scope)
 }
 #endif
 
+static bool is_protected_type(tree type)
+{
+    switch (TREE_CODE(type)) {
+    case ARRAY_TYPE:
+        return true;
+    case UNION_TYPE:
+    case QUAL_UNION_TYPE:
+    case RECORD_TYPE:
+        for (tree t = TYPE_FIELDS(type); t; t = TREE_CHAIN(t)) {
+            if (TREE_CODE(t) != FIELD_DECL)
+                continue;
+            if (is_protected_type(TREE_TYPE(t)))
+                return true;
+        }
+        break;
+    default:
+        return false;
+    }
+
+    return false;
+}
+
 // Recursively check for existence of protected declarations (arrays).
 static bool has_protected_decls(tree decl_initial)
 {
@@ -178,7 +200,7 @@ static bool has_protected_decls(tree decl_initial)
         return false;
 
     if (TREE_CODE(decl_initial) == VAR_DECL) {
-        if (TREE_CODE(TREE_TYPE(decl_initial)) == ARRAY_TYPE)
+        if (is_protected_type(TREE_TYPE(decl_initial)))
             return true;
         else
             return has_protected_decls(DECL_CHAIN(decl_initial));
