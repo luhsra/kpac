@@ -2,7 +2,7 @@
 #+PROPERTY: header-args:python :session *PAC-SW Notebook*
 
 * Init
-#+begin_src python :results none
+#+begin_src python :results output
   import numpy as np
   import pandas as pd
   import matplotlib.pyplot as plt
@@ -19,8 +19,12 @@
       return tabulate(df, headers=df.columns, tablefmt='orgtbl')
 
   query = {
+      "suite": "tacle-bench",
       "arch": "x86_64",
       "cflags": "-O0",
+      "backend": "nop",
+      "cpumasks": "3=2",
+      "scope": "strong",
   }
 
   exp = search_experiment(bench.Bench, "../data", query)
@@ -33,6 +37,8 @@
   benchmarks = list(nopac_raw_orig.keys())
 
   mask_outliers = True
+
+  print(exp.path)
 #+end_src
 
 ** Remove outliers
@@ -116,11 +122,14 @@
 * Overhead
 #+begin_src python :results value raw
   slowdown = pac["mean"] - nopac["mean"]
+  freq = int(exp.o.scaling_cur_freq.value)*1e3
 
   oh = pd.DataFrame()
   oh["overhead"] = slowdown / nopac["mean"] * 100
   oh["aut_s"] = 1/pac["mean"] * build["auths"]
-  oh["cycles"] = slowdown/build["auths"] * int(exp.o.scaling_cur_freq.value)*1e3
+  oh["cycles"] = slowdown/build["auths"] * freq
+
+  oh = oh.sort_values("overhead", ascending = False)
 
   pd2org(oh)
 #+end_src
