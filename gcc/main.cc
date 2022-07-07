@@ -488,12 +488,16 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
     flag_reorder_blocks_and_partition = 0;
     flag_reorder_blocks = 0;
 
+    // Note that tail and sibling call optimization inserts additional epilogues
+    // too: flag_optimize_sibling_calls;
+
     // Temporary registers might get clobbered before prologue in case of
     // delayed frame setup:
     flag_shrink_wrap = 0;
 
-    // Note that tail and sibling call optimization inserts additional epilogues
-    // too: flag_optimize_sibling_calls;
+    // Do not omit saving of call-clobbered registers across some calls as we
+    // use them in our authentication code:
+    flag_ipa_ra = 0;
 
     // Register info about this plugin.
     register_callback(PLUGIN_NAME, PLUGIN_INFO, NULL, &inst_plugin_info);
