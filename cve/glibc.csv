@@ -1,0 +1,128 @@
+cve,relevance,scope,notes
+CVE-2022-23219,3,char,char buffer
+CVE-2022-23218,3,char,char buffer
+CVE-2021-43396,0,,invalid logic
+CVE-2021-38604,0,,dos
+CVE-2021-35942,0,,dos
+CVE-2021-33574,0,,dos
+CVE-2021-27645,0,,dos
+CVE-2021-3326,0,,dos
+CVE-2020-29573,1,char,overflow outside glibc (printf: char)
+CVE-2020-29562,0,,dos
+CVE-2020-27618,0,,dos
+CVE-2020-10029,3,array,int/double buffer
+CVE-2020-6096,1,strong,overflow outside glibc (memcpy)
+CVE-2020-1752,0,,heap use-after-free
+CVE-2020-1751,1,array,overflow outside glibc (backtrace: void *)
+CVE-2019-1010025,0,,bypass
+CVE-2019-1010024,0,,bypass
+CVE-2019-1010023,0,,invalid logic
+CVE-2019-1010022,0,,bypass of stack protector
+CVE-2019-25013,0,,dos
+CVE-2019-19126,0,,bypass
+CVE-2019-9192,0,,uncontrolled recursion
+CVE-2019-9169,0,,heap dos
+CVE-2019-7309,0,,invalid logic
+CVE-2019-6488,0,,dos
+CVE-2018-1000001,1,char,underflow outside glibc (getcwd: char)
+CVE-2018-20796,0,,dos uncontrolled recursion
+CVE-2018-19591,0,,invalid logic
+CVE-2018-11237,0,,buffer outside glibc
+CVE-2018-11236,3,char,alloca buffer
+CVE-2018-6551,0,,heap
+CVE-2018-6485,0,,heap
+CVE-2017-1000409,0,,heap
+CVE-2017-1000408,0,,memory leak
+CVE-2017-1000366,0,,stack clash
+CVE-2017-17426,0,,heap
+CVE-2017-16997,0,,linker
+CVE-2017-15804,0,,heap
+CVE-2017-15671,0,,memory leak
+CVE-2017-15670,0,,heap
+CVE-2017-12133,0,,heap use-after-free
+CVE-2017-12132,0,,priv. escalation
+CVE-2017-8804,0,,dos
+CVE-2016-10739,0,,incorrect logic
+CVE-2016-10228,0,,dos
+CVE-2016-6323,0,,dos
+CVE-2016-5417,0,,dos
+CVE-2016-4429,0,,dos stack clash
+CVE-2016-3706,0,,dos unbounded alloca
+CVE-2016-3075,0,,dos unbounded alloca
+CVE-2016-1234,3,char,char buffer overflow
+CVE-2015-8985,0,,dos
+CVE-2015-8984,0,,dos
+CVE-2015-8983,0,,heap
+CVE-2015-8982,3,char,alloca overflow
+CVE-2015-8779,3,char,alloca overflow
+CVE-2015-8778,0,,heap
+CVE-2015-8777,0,,bypass
+CVE-2015-8776,0,,dos
+CVE-2015-7547,0,char,alloca overflow
+CVE-2015-5277,0,,heap
+CVE-2015-5180,0,,dos
+CVE-2015-1781,1,char,overflow outside glibc (gethostbyname_r: char)
+CVE-2015-1473,3,char,alloca
+CVE-2015-1472,3,char,alloca
+CVE-2015-0235,0,,heap
+CVE-2014-9984,0,,heap
+CVE-2014-9761,3,char,char buffer overflow
+CVE-2014-9402,0,,dos
+CVE-2014-8121,0,,dos
+CVE-2014-7817,0,,invalid logic
+CVE-2014-6040,0,,dos
+CVE-2014-5119,0,,heap
+CVE-2014-4043,0,,dos
+CVE-2014-0475,0,,bypass
+CVE-2013-7424,0,,dos
+CVE-2013-7423,0,,invalid logic
+CVE-2013-4788,0,,invalid logic
+CVE-2013-4458,0,,dos
+CVE-2013-4412,0,,dos
+CVE-2013-4332,0,,dos
+CVE-2013-4237,1,char,overflow outside glibc (readdir_r: char in struct dirent)
+CVE-2013-2207,0,,invalid logic
+CVE-2013-1914,0,,stack clash
+CVE-2013-0242,0,,dos
+CVE-2012-6656,0,,dos
+CVE-2012-4424,3,char,alloca/heap overflow due to int. overflow
+CVE-2012-4412,3,char,alloca/heap overflow due to int. overflow
+CVE-2012-3480,1,char,overflow outside glibc (strtod: char)
+CVE-2012-3406,0,,invalid logic
+CVE-2012-3405,3,char,alloca
+CVE-2012-3404,3,char,alloca
+CVE-2012-0864,3,char,alloca
+CVE-2011-5320,0,,dos
+CVE-2011-4609,0,,dos
+CVE-2011-2702,0,,overflow outside glibc
+CVE-2011-1659,0,,unbounded alloca
+CVE-2011-1658,0,,invalid logic
+CVE-2011-1095,0,,invalid logic
+CVE-2011-1089,0,,invalid logic
+CVE-2011-1071,0,,unbounded alloca
+CVE-2010-4756,0,,dos
+CVE-2010-4052,0,,dos
+CVE-2010-4051,0,,invalid logic/stack clash
+CVE-2010-3856,0,,invalid logic
+CVE-2010-3847,0,,invalid logic
+CVE-2010-3192,0,,argv[0] printed on overflow
+CVE-2010-0830,0,,invalid logic
+CVE-2010-0296,0,,dos
+CVE-2010-0015,0,,obtain info
+CVE-2009-5155,0,,dos
+CVE-2009-5064,0,,disputed invalid logic
+CVE-2009-5029,0,,heap
+CVE-2009-4881,0,,int. overflow dos
+CVE-2009-4880,0,,int. overflow dos
+CVE-2006-7254,0,,dos
+CVE-2005-3590,0,,heap
+CVE-2004-1453,0,,info leak
+CVE-2004-1382,0,,invalid logic
+CVE-2004-0968,0,,invalid logic
+CVE-2003-0859,0,,dos
+CVE-2002-1265,0,,dos
+CVE-2002-1146,0,,dos
+CVE-2000-0959,0,,invalid logic
+CVE-2000-0824,0,,invalid logic
+CVE-2000-0335,0,,invalid logic
+CVE-1999-0199,0,,invalid logic
