@@ -15,9 +15,9 @@ get_samples_tmp="/dev/shm/memtier/${experiment}_GET.csv"
 mkdir -p "$(dirname "$get_samples_tmp")"
 
 ./memtier_benchmark/memtier_benchmark "$@" -P memcache_text --print-percentiles 50,99,99.5,99.9 \
-                                      --test-time=300 --json-out-file="${experiment}.json" --hdr-file-prefix="$experiment" \
+                                      -n 40000 --json-out-file="${experiment}.json" --hdr-file-prefix="$experiment" \
 				      -o "${experiment}.out" \
                                       --get-samples="$get_samples_tmp"
 
-./csv_to_npy "$get_samples_tmp" "${experiment}.npz"
+./csv_to_npy "$get_samples_tmp" "${experiment}_GET.npz"
 rm -vf "$get_samples_tmp"
