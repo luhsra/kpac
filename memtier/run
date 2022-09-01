@@ -2,16 +2,20 @@
 
 set -e
 
-if [ $# -ne 2 ]; then
-    echo "Usage: $0 addr experiment"
+if [ $# -lt 2 ]; then
+    echo "Usage: $0 experiment [args]"
     exit 1
 fi
 
-mkdir -p "$(dirname /dev/shm/memtier/"$2"_GET.csv)"
+experiment="$1"
+shift
 
-./memtier_benchmark/memtier_benchmark -s "$1" -p 11211 -P memcache_text --print-percentiles 50,99,99.5,99.9 \
-                                      --test-time=300 --json-out-file="$2.json" --hdr-file-prefix="$2" -o "$2.out" \
-                                      --get-samples="/dev/shm/memtier/$2_GET.csv"
+mkdir -p "$(dirname /dev/shm/memtier/"$experiment"_GET.csv)"
 
-./csv_to_npy "/dev/shm/memtier/$2_GET.csv" "$2_GET.npz"
-rm -vf "/dev/shm/memtier/$2_GET.csv"
+./memtier_benchmark/memtier_benchmark $* -P memcache_text --print-percentiles 50,99,99.5,99.9 \
+                                      --test-time=300 --json-out-file="$experiment.json" --hdr-file-prefix="$experiment" \
+				      -o "$experiment.out" \
+                                      --get-samples="/dev/shm/memtier/$experiment.csv"
+
+./csv_to_npy "/dev/shm/memtier/$experiment.csv" "$experiment.npz"
+rm -vf "/dev/shm/memtier/$experiment.csv"
