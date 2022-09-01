@@ -1,0 +1,112 @@
+From 0e160fb236c1c6a0fbfa33df3916a7f1c8867b88 Mon Sep 17 00:00:00 2001
+From: Illia Ostapyshyn <illia.ostapyshyn@stud.uni-hannover.de>
+Date: Thu, 1 Sep 2022 16:04:16 +0200
+Subject: [PATCH] Output GET samples into a file
+
+---
+ memtier_benchmark.cpp | 17 +++++++++++++++++
+ memtier_benchmark.h   |  1 +
+ run_stats.cpp         |  5 +++++
+ 3 files changed, 23 insertions(+)
+
+diff --git a/memtier_benchmark.cpp b/memtier_benchmark.cpp
+index 6963bae..1b5f72a 100755
+--- a/memtier_benchmark.cpp
++++ b/memtier_benchmark.cpp
+@@ -48,6 +48,7 @@
+ #include "obj_gen.h"
+ #include "memtier_benchmark.h"
+ 
++FILE *get_samples_file = NULL;
+ 
+ static int log_level = 0;
+ void benchmark_log_file_line(int level, const char *filename, unsigned int line, const char *fmt, ...)
+@@ -362,6 +363,7 @@ static int config_parse_args(int argc, char *argv[], struct benchmark_config *cf
+     enum extended_options {
+         o_test_time = 128,
+         o_ratio,
++        o_get_samples,
+         o_pipeline,
+         o_data_size_range,
+         o_data_size_list,
+@@ -418,6 +420,7 @@ static int config_parse_args(int argc, char *argv[], struct benchmark_config *cf
+         { "tls-skip-verify",            0, 0, o_tls_skip_verify },
+         { "sni",                        1, 0, o_tls_sni },
+ #endif
++        { "get-samples",                1, 0, o_get_samples },
+         { "out-file",                   1, 0, 'o' },
+         { "hdr-file-prefix",            1, 0, o_hdr_file_prefix },
+         { "client-stats",               1, 0, o_client_stats },
+@@ -519,6 +522,9 @@ static int config_parse_args(int argc, char *argv[], struct benchmark_config *cf
+                 case 'o':
+                     cfg->out_file = optarg;
+                     break;
++                case o_get_samples:
++                    cfg->get_samples = optarg;
++                    break;
+                 case o_hdr_file_prefix:
+                     cfg->hdr_prefix = optarg;
+                     break;
+@@ -1504,6 +1510,14 @@ int main(int argc, char *argv[])
+         outfile = stdout;
+     }
+ 
++    if (cfg.get_samples != NULL) {
++        fprintf(stderr, "Writing samples to %s...\n", cfg.get_samples);
++        get_samples_file = fopen(cfg.get_samples, "w");
++        if (!outfile) {
++            perror(cfg.get_samples);
++        }
++    }
++
+     if (!cfg.verify_only) {
+         std::vector<run_stats> all_stats;
+         all_stats.reserve(cfg.run_count);
+@@ -1626,6 +1640,9 @@ int main(int argc, char *argv[])
+         delete cfg.arbitrary_commands;
+     }
+ 
++    if (get_samples_file)
++        fclose(get_samples_file);
++
+ #ifdef USE_TLS
+     if(cfg.tls) {
+         if (cfg.openssl_ctx) {
+diff --git a/memtier_benchmark.h b/memtier_benchmark.h
+index c180e2c..f683278 100644
+--- a/memtier_benchmark.h
++++ b/memtier_benchmark.h
+@@ -56,6 +56,7 @@ struct benchmark_config {
+     const char *unix_socket;
+     enum PROTOCOL_TYPE protocol;
+     const char *out_file;
++    const char *get_samples;
+     const char *client_stats;
+     unsigned int run_count;
+     int debug;
+diff --git a/run_stats.cpp b/run_stats.cpp
+index a848a84..9f93055 100644
+--- a/run_stats.cpp
++++ b/run_stats.cpp
+@@ -172,6 +172,8 @@ void run_stats::roll_cur_stats(struct timeval* ts)
+     }
+ }
+ 
++extern FILE *get_samples_file;
++
+ void run_stats::update_get_op(struct timeval* ts, unsigned int bytes, unsigned int latency, unsigned int hits, unsigned int misses)
+ {
+     roll_cur_stats(ts);
+@@ -179,6 +181,9 @@ void run_stats::update_get_op(struct timeval* ts, unsigned int bytes, unsigned i
+     m_totals.update_op(bytes, latency);
+     hdr_record_value(m_get_latency_histogram,latency);
+     hdr_record_value(inst_m_get_latency_histogram,latency);
++
++    if (get_samples_file)
++        fprintf(get_samples_file, "%u\n", latency);
+ }
+ 
+ void run_stats::update_set_op(struct timeval* ts, unsigned int bytes, unsigned int latency)
+-- 
+2.34.1
+

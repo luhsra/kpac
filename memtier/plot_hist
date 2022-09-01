@@ -1,0 +1,26 @@
+#!/usr/bin/python3
+
+import sys
+import matplotlib.pyplot as plt
+import numpy as np
+
+def reject_outliers(data, m=2):
+    return data[abs(data - np.mean(data)) < m * np.std(data)]
+
+def plot(ax, b, name):
+    #b = reject_outliers(b, 2)
+    ax.hist(b, bins=1024, range=(0,1e5))
+    ax.axvline(b.mean(), color='k', linestyle='dashed', linewidth=1)
+    ax.set_yscale('log')
+    ax.set_title(name + f": {b.mean()}")
+
+fig, ax = plt.subplots(len(sys.argv)-1, 1, sharex=True)
+
+for i, v in enumerate(sys.argv[1:]):
+    a = np.load(v)['arr_0']
+    #a = reject_outliers(a)
+    this_ax = ax if len(sys.argv) == 2 else ax[i]
+
+    plot(this_ax, a, v)
+
+plt.show()
