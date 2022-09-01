@@ -9,7 +9,7 @@ def reject_outliers(data, m=2):
 
 def plot(ax, b, name):
     #b = reject_outliers(b, 2)
-    ax.hist(b, bins=1024, range=(0,1e5))
+    ax.hist(b, bins=1024) #range=(0,1e5))
     ax.axvline(b.mean(), color='k', linestyle='dashed', linewidth=1)
     ax.set_yscale('log')
     ax.set_title(name + f": {b.mean()}")
