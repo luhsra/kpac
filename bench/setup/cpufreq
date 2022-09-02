@@ -19,7 +19,7 @@ if [ -d "/sys/devices/system/cpu/intel_pstate" ]; then
     FREQ_PERCENTAGE=100
 
     # Disable turbo boost
-    echo 1 > no_turbo
+    echo 1 > no_turbo || true
 
     # Set cpu P-State min and max to be equal
     echo $FREQ_PERCENTAGE > max_perf_pct
