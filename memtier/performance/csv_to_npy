@@ -1,0 +1,10 @@
+#!/usr/bin/env python3
+
+import numpy as np
+import sys
+
+if __name__ == '__main__':
+    assert len(sys.argv) == 3
+
+    a = np.genfromtxt(sys.argv[1])
+    np.savez_compressed(sys.argv[2], a)

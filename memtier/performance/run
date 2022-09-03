@@ -1,0 +1,26 @@
+#!/bin/sh
+
+set -e
+
+if [ $# -lt 2 ]; then
+    echo "Usage: $0 experiment [args]"
+    exit 1
+fi
+
+experiment="data/$1"
+shift
+
+get_samples_tmp="/dev/shm/memtier/${experiment}_GET.csv"
+
+mkdir -p "$(dirname "$get_samples_tmp")"
+
+#stress --cpu $(nproc) -t 5 &
+../memtier_benchmark/memtier_benchmark "$@" -P memcache_text --test-time=5 --hide-histogram
+../memtier_benchmark/memtier_benchmark "$@" -P memcache_text --print-percentiles 50,99,99.5,99.9 \
+                                       --test-time=100 --json-out-file="${experiment}.json" \
+                                       --hdr-file-prefix="$experiment" \
+				       -o "${experiment}.out" \
+                                       --get-samples="$get_samples_tmp"
+
+./csv_to_npy "$get_samples_tmp" "${experiment}_GET.npz"
+rm -vf "$get_samples_tmp"

@@ -1,0 +1,65 @@
+#+STARTUP: content
+#+PROPERTY: header-args:python :session *PAC-SW Power Notebook*
+
+* Init
+#+begin_src python :results output
+  import numpy as np
+  import matplotlib.pyplot as plt
+  import os
+
+  exp = 'pi4/strong'
+  out = f'out/{exp}'
+
+  os.makedirs(os.path.dirname(out), exist_ok=True)
+
+  voltage_path = f'../data/{exp}-voltage.csv'
+  current_path = f'../data/{exp}-current.csv'
+
+  voltage = 0
+  with open(voltage_path) as f:
+      voltage = float(f.read())
+
+  current_series = np.genfromtxt(current_path, delimiter=',').transpose()
+  curr = {
+      't': current_series[0],
+      'i': current_series[1],
+  }
+
+  dur = curr['t'][-1]
+
+  print(f'{exp}:')
+  print(f'U = {voltage}')
+  print(f'Iavg = {curr["i"].mean()})')
+  print(f'{len(curr["t"])} samples over {dur} seconds')
+#+end_src
+
+#+RESULTS:
+: pi4/strong:
+: U = 5.45297904
+: Iavg = 1.2493453239518408)
+: 18771 samples over 2404.2666552066803 seconds
+
+* Plot
+#+begin_src python :results file
+  plt.cla()
+  plt.plot(curr['t'], curr['i'])
+
+  f = out + '-raw.pdf'
+  plt.savefig(f)
+  f
+#+end_src
+
+#+RESULTS:
+[[file:out/pi4/strong-raw.pdf]]
+
+#+begin_src python :results output
+  W = np.trapz(voltage*curr['i'], curr['t'])
+  P = W/dur
+
+  print(f'W = {W/3600} Wh')
+  print(f'P = {P} W')
+#+end_src
+
+#+RESULTS:
+: W = 4.549944172769366 Wh
+: P = 6.812804638993608 W
