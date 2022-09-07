@@ -105,11 +105,6 @@ class Suite:
         self.benchmarks = \
             [Benchmark(bench, j) for bench in j["benchmarks"].keys()]
 
-    def build_nopac(self, cflags):
-        os.environ["CFLAGS"] = cflags
-        for b in self.benchmarks:
-            b.build()
-
     # Build the benchmarks with specified plugin arguments, compile
     # instrumentation statistics
     def build_pac(self, cflags, args):
@@ -148,6 +143,9 @@ class Bench(Experiment):
     def get_arch(self):
         return String(uname().machine)
 
+    def get_hostname(self):
+        return String(uname().node)
+
     def get_cpumasks(self):
         cpumasks = ""
         for i in range(cpu_count()):
@@ -168,13 +166,13 @@ class Bench(Experiment):
         "cflags":   String("-O0"),
         "scope":    String("std"),
         "arch":     get_arch,
+        "host":     get_hostname,
         "cpumasks": get_cpumasks,
         "backend":  get_backend,
     }
 
     outputs = {
         "scaling_cur_freq": File("scaling_cur_freq"),
-        "nopac":            File("nopac.npz"),
         "pac":              File("pac.npz"),
         "build":            CSV_File("build.csv"), # Build facts
     }
@@ -184,11 +182,6 @@ class Bench(Experiment):
             self.o.scaling_cur_freq.value = f.read()
 
         suite = Suite(os.path.join(sys.path[0], self.i.suite.value) + ".toml")
-
-        # Baseline run without PAC
-        suite.build_nopac(self.i.cflags.value)
-        durs, _ = suite.meas()
-        np.savez_compressed(self.o.nopac.path, **durs)
 
         # PAC-protected run
         args = {}
@@ -204,7 +197,7 @@ class Bench(Experiment):
             self.o.build.append([k, inst[k][0], inst[k][1], auths[k]])
 
     def symlink_name(self):
-        x = f"{to_pascal_case(self.i.suite.value)}-{self.i.arch.value}-" + \
+        x = f"{to_pascal_case(self.i.suite.value)}-{self.i.host.value}-" + \
             f"{self.i.backend.value}-{self.i.scope.value}-" + \
             f"[{self.i.cflags.value}]-[{self.i.cpumasks.value}]"
         return x

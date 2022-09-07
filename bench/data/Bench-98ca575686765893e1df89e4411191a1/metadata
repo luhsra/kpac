@@ -1,0 +1,1 @@
+{"suite": "tacle-bench-full", "cflags": "-O0", "scope": "char", "arch": "x86_64", "host": "lab-pc61", "cpumasks": "3=2", "backend": "qarma", "date-start": "2022-09-06 20:39:58.231201", "experiment-name": "Bench", "experiment-version": 1, "experiment-hash": "98ca575686765893e1df89e4411191a1", "date-end": "2022-09-06 20:52:54.849494"}

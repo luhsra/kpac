@@ -19,30 +19,26 @@
       return tabulate(df, headers=df.columns, tablefmt='orgtbl')
 
   query = {
-      "suite": "tacle-bench",
-      "arch": "x86_64",
+      "suite": "tacle-bench-full",
+      "host": "lab-pc61",
       "cflags": "-O0",
-      "backend": "nop",
+      "backend": "qarma",
       "cpumasks": "3=2",
-      "scope": "strong",
+      "scope": "all",
   }
 
   exp = search_experiment(bench.Bench, "../data", query)
-  nopac_raw_orig = dict(np.load(exp.o.nopac.path))
   pac_raw_orig = dict(np.load(exp.o.pac.path))
 
-  nopac_raw = nopac_raw_orig
   pac_raw = pac_raw_orig
 
-  benchmarks = list(nopac_raw_orig.keys())
-
-  mask_outliers = True
+  benchmarks = list(pac_raw_orig.keys())
 
   print(exp.path)
 #+end_src
 
 ** Remove outliers
-#+begin_src python :results value raw :noeval
+#+begin_src python :results value raw
   def mask_std(v, n):
       mean = v.mean()
       std = v.std()
@@ -51,28 +47,20 @@
 
   masked_pd = pd.DataFrame(index=benchmarks)
 
-  nopac_raw = {k: mask_std(v, 2) for k, v in nopac_raw_orig.items()}
   pac_raw = {k: mask_std(v, 2) for k, v in pac_raw_orig.items()}
-  masked_pd["masked_nopac"] = [ np.ma.count_masked(v) for v in nopac_raw.values() ]
   masked_pd["masked_pac"] = [ np.ma.count_masked(v) for v in pac_raw.values() ]
 
   pd2org(masked_pd)
 #+end_src
 
 ** Plot
-#+begin_src python :results file :noeval
-  figure, axis = plt.subplots(len(benchmarks), 2, figsize=(40,80))
-
-  i = 0
-  for k, v in nopac_raw.items():
-      axis[i, 0].plot(v)
-      axis[i, 0].set_title(k)
-      i+=1
+#+begin_src python :results file
+  figure, axis = plt.subplots(len(benchmarks), 1, figsize=(40,160))
 
   i = 0
   for k, v in pac_raw.items():
-      axis[i, 1].plot(v)
-      axis[i, 1].set_title(k)
+      axis[i].plot(v)
+      axis[i].set_title(k)
       i+=1
 
   f = "raw.pdf"
@@ -87,7 +75,7 @@
   pd2org(build)
 #+end_src
 
-** PA enabled
+** Runtime
 #+begin_src python :results value raw
   pac = pd.DataFrame({
       "mean": { k: v.mean() for k, v in pac_raw.items() },
@@ -103,8 +91,18 @@
   pd2org(pac)
 #+end_src
 
-** PA disabled
+* Overhead
+** Load baseline
+
 #+begin_src python :results value raw
+  query_nil = query.copy()
+  query_nil['scope'] = 'nil'
+
+  exp_nil = search_experiment(bench.Bench, "../data", query_nil)
+
+  nopac_raw_orig = dict(np.load(exp_nil.o.pac.path))
+  nopac_raw = nopac_raw_orig
+
   nopac = pd.DataFrame({
       "mean": { k: v.mean() for k, v in nopac_raw.items() },
       "std": { k: v.std() for k, v in nopac_raw.items() },
@@ -115,11 +113,12 @@
   nopac["rstd"] = nopac["std"]/nopac["mean"]
   nopac["rmax"] = nopac["max"]/nopac["mean"]-1
   nopac["rmin"] = 1-nopac["min"]/nopac["mean"]
-  
-  pd2org(nopac)
+
+  pd2org(nopac)  
 #+end_src
 
-* Overhead
+** Evaluate
+
 #+begin_src python :results value raw
   slowdown = pac["mean"] - nopac["mean"]
   freq = int(exp.o.scaling_cur_freq.value)*1e3
