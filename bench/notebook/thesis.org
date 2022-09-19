@@ -99,7 +99,7 @@
       ax.set_ylim([0, 10**4])
       ax.set_title(archs[host])
       ax.set_xlabel("Authentication requests per benchmark")
-      ax.set_ylabel("Run-time overhead, %")
+      ax.set_ylabel("Run-time overhead [%]")
 
   red_patch1 = matplotlib.lines.Line2D([0], [0], color='black', linestyle='--', linewidth=1)
   handles, labels = axs[0].get_legend_handles_labels()
@@ -140,7 +140,7 @@
           df['prot_rel'] = df['inst']/df['total'] * 100
           df['prot_rel'].plot.bar(ax=ax, legend=True, label=f'{scope}', color=colors[i])
       ax.set_yscale('linear')
-      ax.set_ylabel('Protected functions, %')
+      ax.set_ylabel('Protected functions [%]')
       ax.set_ylim([0, 105])
 
 
@@ -159,7 +159,7 @@
           df = exps[host]['nop'][scope]['oh'].nlargest(12)
           df.plot.bar(ax=ax, sharex=True, legend=True, label=f'{scope}', color=colors[i])
       ax.set_yscale('symlog', linthresh=1)
-      ax.set_ylabel('Run-time overhead, %')
+      ax.set_ylabel('Run-time overhead [%]')
       set_yticks(ax)
       ax.set_ylim([0, 10**4])
 

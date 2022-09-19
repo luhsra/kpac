@@ -96,7 +96,7 @@
               ax.set_title(archs[host])
 
           if j == 2:
-              ax.set_xlabel('Request latency, ms')
+              ax.set_xlabel('Request latency [ms]')
 
           ax.minorticks_on()
           ax.tick_params(axis='y', which='minor', left=False)
