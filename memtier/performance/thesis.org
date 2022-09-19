@@ -52,7 +52,6 @@
           maxs[host] = max(maxs.get(host,0),np.max(d))
           exps[host][scope] = d
 
-
 #+end_src
 
 
@@ -62,7 +61,7 @@
   fig.set_figheight(8)
   fig.set_figwidth(8)
 
-  colors=["#303F9F", "#00796B", "#D32F2F"]
+  colors=["#303F9F", "#00796B", "#C62828"]
 
   for i, host in enumerate(hosts):
       handles = []
@@ -135,24 +134,22 @@
 #+end_src
 
 #+begin_src python :results none
-
-  for host in hosts:
-      fn = f'stats_{host}.tex'
-
-      with open(fn, 'w') as f:
-          f.write('\\begin{tabular}{lrrrrr}\n')
-          f.write('\\toprule\n')
-          f.write(' & \\multicolumn{5}{r}{Latency (ms)}\\\\\n')
-          f.write(' & Average & P50 & P99 & P99.5 & P99.9 \\\\\n\midrule\n')
+  fn = f'stats.tex'
+  with open(fn, 'w') as f:
+      f.write('\\begin{tabular}{cp{0.2\linewidth}rrrrr}\n')
+      f.write('\\toprule\n')
+      f.write(' & & \\multicolumn{5}{r}{Latency [ms]}\\\\\n')
+      f.write(' & & Average & P50 & P99 & P99.5 & P99.9 \\\\\n')
+      for host in hosts:
+          f.write('\midrule\n')
           for k, d in exps2[host].items():
-              f.write('\\texttt{{{}}} & {:.3f} & {:.3f} & {:.3f} & {:.3f} & {:.3f}\\\\\n'
-                      .format(k, d['mean'], d['p50'], d['p99'], d['p99.5'], d['p99.9']))
+              t = ""
+              if k=='nil-0':
+                  t = archs[host]
+              f.write('{} & \\texttt{{{}}} & {:.3f} & {:.3f} & {:.3f} & {:.3f} & {:.3f}\\\\\n'
+                      .format(t, k, d['mean'], d['p50'], d['p99'], d['p99.5'], d['p99.9']))
 
-          f.write('\\bottomrule\n')
-          f.write('\\end{tabular}')
+      f.write('\\bottomrule\n')
+      f.write('\\end{tabular}')
 
-#+end_src
-
-#+begin_src python :results none
-  
 #+end_src
