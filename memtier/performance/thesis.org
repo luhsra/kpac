@@ -131,6 +131,12 @@
               exps2[host][f'{scope}-{core}']['p99'] = np.percentile(d, 99)
               exps2[host][f'{scope}-{core}']['p99.5'] = np.percentile(d, 99.5)
               exps2[host][f'{scope}-{core}']['p99.9'] = np.percentile(d, 99.9)
+              exps2[host][f'{scope}-{core}']['tput'] = 1/(d.mean()*1e-3)
+
+  for host in hosts:
+      for k, d in exps2[host].items():
+          exps2[host][k]['tput_rel'] = (exps2[host][k]['tput'] / exps2[host]['nil-0']['tput'])*100
+          exps2[host][k]['tput_sdown'] = 100 - exps2[host][k]['tput_rel']
 #+end_src
 
 #+begin_src python :results none
@@ -151,5 +157,38 @@
 
       f.write('\\bottomrule\n')
       f.write('\\end{tabular}')
+
+#+end_src
+
+#+begin_src python :results none
+
+  fn = 'throughput.pdf'
+  fig, axs = plt.subplots(ncols=2, nrows=1)
+  fig.set_figheight(4)
+  fig.set_figwidth(8)
+
+  for i, host in enumerate(hosts):
+      ax = axs[i]
+
+      df = pd.DataFrame.from_dict(exps2[host], orient='index')
+      df = df.loc[["all-1", "all-2", "all-6", "all-12", "strong-1"]]
+
+
+      df['tput_sdown'].plot.bar(ax=ax, color=["#C62828", "#C62828", "#C62828", "#C62828","#00796B"], logy=False)
+      ax.set_ylim([0, 100])
+      ax.minorticks_on()
+      ax.tick_params(axis='x', which='minor', bottom=False)
+
+      ax.set_title(archs[host])
+      ax.set_ylabel('Throughput reduction [%]')
+
+      if i != 0:
+          ax.yaxis.tick_right()
+          ax.yaxis.label.set_visible(False)
+
+      ax.set_xticklabels(ax.get_xticklabels(), rotation=0)
+
+  plt.subplots_adjust(left=0.075, right=0.95, top=0.925, bottom=0.1, wspace=0.05, hspace=0.10)
+  plt.savefig(fn)
 
 #+end_src
