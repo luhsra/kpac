@@ -171,10 +171,10 @@
       ax = axs[i]
 
       df = pd.DataFrame.from_dict(exps2[host], orient='index')
-      df = df.loc[["all-1", "all-2", "all-6", "all-12", "strong-1"]]
+      df = df.loc[["all-1", "all-2", "all-6", "all-12", "strong-1", "nil-0"]]
 
 
-      df['tput_rel'].plot.bar(ax=ax, color=["#C62828", "#C62828", "#C62828", "#C62828","#00796B"], logy=False)
+      df['tput_rel'].plot.bar(ax=ax, color=["#C62828", "#C62828", "#C62828", "#C62828","#00796B", "#303F9F"], logy=False)
       ax.set_ylim([0, 100])
       ax.minorticks_on()
       ax.tick_params(axis='x', which='minor', bottom=False)
