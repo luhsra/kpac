@@ -174,13 +174,13 @@
       df = df.loc[["all-1", "all-2", "all-6", "all-12", "strong-1"]]
 
 
-      df['tput_sdown'].plot.bar(ax=ax, color=["#C62828", "#C62828", "#C62828", "#C62828","#00796B"], logy=False)
+      df['tput_rel'].plot.bar(ax=ax, color=["#C62828", "#C62828", "#C62828", "#C62828","#00796B"], logy=False)
       ax.set_ylim([0, 100])
       ax.minorticks_on()
       ax.tick_params(axis='x', which='minor', bottom=False)
 
       ax.set_title(archs[host])
-      ax.set_ylabel('Throughput reduction [%]')
+      ax.set_ylabel('Throughput [%]')
 
       if i != 0:
           ax.yaxis.tick_right()
