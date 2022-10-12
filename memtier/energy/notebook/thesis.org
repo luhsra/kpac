@@ -93,3 +93,22 @@
   plt.subplots_adjust(left=0.075, right=0.98, top=0.95, bottom=0.1, wspace=0.2, hspace=0.10)
   plt.savefig('summary.pdf')
 #+end_src
+
+#+begin_src python :results none
+  fig,axs = plt.subplots(ncols = 1, nrows = 1)
+  fig.set_figheight(3)
+  fig.set_figwidth(6)
+
+  colors=["#1976D2", "#4CAF50"]
+
+  pd.DataFrame([exps['lab-pc61']['p'], exps['pi4']['p']]).plot.bar(ax = axs, color=colors)
+
+  axs.set_ylabel("Power [W]")
+
+
+  axs.set_xticklabels(['x86-64', 'AArch64'], rotation=0)
+
+
+  plt.subplots_adjust(left=0.1, right=0.9, top=0.95, bottom=0.1, wspace=0.2, hspace=0.10)
+  plt.savefig('summary_pres.pdf')
+#+end_src

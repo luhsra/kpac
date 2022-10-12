@@ -174,4 +174,13 @@
 
   plt.subplots_adjust(left=0.075, right=0.95, top=0.95, bottom=0.15, wspace=0.05, hspace=0.10)
   plt.savefig(fn)
+
+  axs[0][1].get_legend().remove()
+  axs[1][1].legend(loc='upper right')
+
+  fig.set_figheight(4.5)
+  fig.set_figwidth(9)
+  plt.subplots_adjust(left=0.075, right=0.95, top=0.945, bottom=0.15, wspace=0.05, hspace=0.15)
+  plt.savefig('slides_'+fn)
+
 #+end_src
