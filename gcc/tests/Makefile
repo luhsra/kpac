@@ -1,3 +1,5 @@
+ARCH ?= $(shell uname -m)
+
 TEST_SRCS := $(wildcard *.c)
 TEST_BINS := $(TEST_SRCS:.c=)
 
@@ -8,7 +10,10 @@ LEAF ?=
 SCOPE ?=
 INIT ?=
 
-PLUGIN_FLAGS = -fplugin=./$(PLUGIN) \
+VARIANT ?= syscall
+ASM := ../asm/$(VARIANT)/$(ARCH)
+
+PLUGIN_FLAGS = -fplugin=./$(PLUGIN) -fplugin-arg-pac_sw_plugin-asm=$(ASM) \
 	$(if $(SCOPE), -fplugin-arg-pac_sw_plugin-scope=$(SCOPE)) \
 	$(if $(INIT), -fplugin-arg-pac_sw_plugin-init=$(INIT)) \
 	$(if $(LEAF), -fplugin-arg-pac_sw_plugin-leaf=$(LEAF))

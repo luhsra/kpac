@@ -10,8 +10,7 @@
 #include <gimple.h>
 #include <gimple-iterator.h>
 #include <diagnostic.h>
-
-#include "asm.h"
+#include <assert.h>
 
 #define PLUGIN_NAME "pac_sw_plugin"
 #define PLUGIN_VERSION "0.1"
@@ -37,6 +36,8 @@ static struct plugin_info inst_plugin_info = {
 
 enum { PROLOGUE, EPILOGUE };
 
+static const char *prologue_s = NULL;
+static const char *epilogue_s = NULL;
 static const char *init_function = NULL;
 
 enum {
@@ -431,6 +432,30 @@ static void inst_stat_dump(void *event_data, void *data)
     fclose(f);
 }
 
+static int read_code(const char *file, const char **code)
+{
+    size_t fsize;
+    char *tmp = NULL;
+    FILE *f = fopen(file, "r");
+    if (!f)
+        return 1;
+
+    fseek(f, 0, SEEK_END);
+    fsize = ftell(f);
+    rewind(f);
+
+    tmp = (char *) xmalloc(fsize+1);
+    if (fread(tmp, 1, fsize, f) != fsize) {
+        free(tmp);
+        fclose(f);
+        return 1;
+    }
+
+    tmp[fsize] = 0;
+    *code = tmp;
+    return 0;
+}
+
 int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
 {
     struct register_pass_info pass_inst = {
@@ -463,6 +488,25 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
                 err(PLUGIN_NAME ": Invalid scope '%s'.\n", value);
                 return 1;
             }
+        } else if (!strcmp(key, "asm")) {
+            char *prolp, *epilp;
+            int ret;
+            ret = asprintf(&prolp, "%s/prologue.s", value);
+            assert(ret > 0);
+            ret = asprintf(&epilp, "%s/epilogue.s", value);
+            assert(ret > 0);
+
+            if (read_code(prolp, &prologue_s)) {
+                err(PLUGIN_NAME ": Unable to read %s.\n", prolp);
+                return 1;
+            }
+            if (read_code(epilp, &epilogue_s)) {
+                err(PLUGIN_NAME ": Unable to read %s.\n", epilp);
+                return 1;
+            }
+
+            free(prolp);
+            free(epilp);
         } else if (!strcmp(key, "init")) {
             if (value[0])
                 init_function = value;
@@ -482,6 +526,11 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
             err(PLUGIN_NAME ": Unknown argument '%s'.\n", key);
             return 1;
         }
+    }
+
+    if (!prologue_s || !epilogue_s) {
+        err(PLUGIN_NAME ": No (pro/epi)logue provided.\n");
+        return 1;
     }
 
     // Disable incompatible optimizations.  Multiple epilogues cause the code
