@@ -1,7 +1,7 @@
 ARCH ?= $(shell uname -m)
 TARGET_GCC = $(CROSS_COMPILE)gcc
 
-ASM = asm
+ASM ?= asm/syscall
 
 PROLOGUE ?= $(ASM)/$(ARCH)/prologue.S
 EPILOGUE ?= $(ASM)/$(ARCH)/epilogue.S
