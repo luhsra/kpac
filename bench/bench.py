@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import numpy as np
 import subprocess as sp
@@ -165,6 +165,7 @@ class Bench(Experiment):
         "suite":    String("tacle-bench"),
         "cflags":   String("-O0"),
         "scope":    String("std"),
+        "variant":  String("kpacd"),
         "arch":     get_arch,
         "host":     get_hostname,
         "cpumasks": get_cpumasks,
@@ -178,13 +179,18 @@ class Bench(Experiment):
     }
 
     def run(self):
-        with open(CUR_CPUFREQ) as f:
-            self.o.scaling_cur_freq.value = f.read()
+        try:
+            with open(CUR_CPUFREQ) as f:
+                self.o.scaling_cur_freq.value = f.read()
+        except EnvironmentError:
+            print("Cannot detect CPU frequency")
+            self.o.scaling_cur_freq.value = 0
 
         suite = Suite(os.path.join(sys.path[0], self.i.suite.value) + ".toml")
 
         # PAC-protected run
         args = {}
+        args["asm"] = os.path.join(PLUGIN_DIR, "asm", self.i.variant.value, self.i.arch.value)
         if self.i.scope.value:
             args["scope"] = self.i.scope.value
 
