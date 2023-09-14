@@ -16,7 +16,7 @@
 #define PLUGIN_NAME "pac_sw_plugin"
 #define PLUGIN_VERSION "0.1"
 #define PLUGIN_HELP PLUGIN_NAME ": Instrumentation for Software-Emulated PAC."
-#define PLUGIN_GCC_REQ "10.2.1" // Required GCC version
+#define PLUGIN_GCC_REQ "12.2.0" // Required GCC version
 
 #define SCOPE_ATTR "pac_scope"
 
@@ -329,6 +329,7 @@ static rtx expand_asm_loc(tree string, int vol, location_t locus)
         rtx asm_op, clob;
         unsigned i, nclobbers;
         auto_vec<rtx> input_rvec, output_rvec;
+        auto_vec<machine_mode> input_mode;
         auto_vec<const char *> constraints;
         auto_vec<rtx> clobber_rvec;
         HARD_REG_SET clobbered_regs;
@@ -338,9 +339,9 @@ static rtx expand_asm_loc(tree string, int vol, location_t locus)
         clobber_rvec.safe_push(clob);
 
         if (targetm.md_asm_adjust)
-            targetm.md_asm_adjust(output_rvec, input_rvec,
-                                  constraints, clobber_rvec,
-                                  clobbered_regs);
+            targetm.md_asm_adjust(output_rvec, input_rvec, input_mode,
+                                  constraints, clobber_rvec, clobbered_regs,
+                                  locus);
 
         asm_op = body;
         nclobbers = clobber_rvec.length();

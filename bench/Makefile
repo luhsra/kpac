@@ -1,7 +1,7 @@
 TARGET = timing.so
 SRC = $(TARGET:.so=.c)
 
-CFLAGS = -I/usr/include/python3.9 -Wall -Wextra -fPIC
+CFLAGS = -I/usr/include/python3.11 -Wall -Wextra -fPIC
 
 .PHONY: all
 all: $(TARGET)
