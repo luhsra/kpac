@@ -1,5 +1,5 @@
-warmup = 5
-samples = 50
+warmup = 1
+samples = 10
 
 build_cmd = "make clean && make compile \"CFLAGS=$CFLAGS\""
 run_cmd = "make run-medium"

@@ -1,5 +1,5 @@
-samples = 1000
-warmup = 100
+samples = 100
+warmup = 10
 
 build_cmd = "gcc $CFLAGS -o exe *.c"
 run_cmd   = "./exe"

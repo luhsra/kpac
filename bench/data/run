@@ -1,5 +1,0 @@
-#!/bin/sh
-
-for scope in nil char array strong all; do
-    ../bench.py --suite tacle-bench-full --scope $scope --cflags "-O0"
-done
