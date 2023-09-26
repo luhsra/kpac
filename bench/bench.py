@@ -141,12 +141,6 @@ class Suite:
         return results, auths
 
 class Bench(Experiment):
-    def get_arch(self):
-        return String(uname().machine)
-
-    def get_hostname(self):
-        return String(uname().node)
-
     def get_cpumasks(self):
         cpumasks = ""
         for i in range(cpu_count()):
@@ -166,13 +160,20 @@ class Bench(Experiment):
         return lambda self: String(os.environ.get(var, ""))
 
     inputs = {
-        "suite":    String("tacle-bench"),
-        "scope":    String("nil"),
-        "variant":  String("syscall"),
-        "arch":     get_arch,
-        "host":     get_hostname,
+        "suite":   String("tacle-bench"),
+
+        "scope":   String("nil"),
+        "variant": String("syscall"),
+
         "cpumasks": get_cpumasks,
         "backend":  get_backend,
+
+        "arch":   lambda self: String(uname().machine),
+        "host":   lambda self: String(uname().node),
+        "kernel": lambda self: String(" ".join([
+            uname().system, uname().release, uname().version
+        ])),
+
         "cflags":     get_env("CFLAGS"),
         "ld_preload": get_env("LD_PRELOAD"),
     }
