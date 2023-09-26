@@ -11,6 +11,7 @@ import re
 import csv
 import toml
 
+from pprint import pprint
 from multiprocessing import cpu_count
 from platform import uname
 
@@ -161,15 +162,19 @@ class Bench(Experiment):
         with open(os.path.join(KPACD_DIR, "backend")) as f:
             return String(f.read().strip())
 
+    def get_env(var):
+        return lambda self: String(os.environ.get(var, ""))
+
     inputs = {
         "suite":    String("tacle-bench"),
-        "cflags":   String("-O0"),
-        "scope":    String("std"),
-        "variant":  String("kpacd"),
+        "scope":    String("nil"),
+        "variant":  String("syscall"),
         "arch":     get_arch,
         "host":     get_hostname,
         "cpumasks": get_cpumasks,
         "backend":  get_backend,
+        "cflags":     get_env("CFLAGS"),
+        "ld_preload": get_env("LD_PRELOAD"),
     }
 
     outputs = {
@@ -179,6 +184,8 @@ class Bench(Experiment):
     }
 
     def run(self):
+        pprint(self.i)
+
         try:
             with open(CUR_CPUFREQ) as f:
                 self.o.scaling_cur_freq.value = f.read()
