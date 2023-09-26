@@ -1,6 +1,6 @@
 TOPTARGETS := all clean
 
-SUBDIRS := gcc bench
+SUBDIRS := gcc virt bench
 
 $(TOPTARGETS): $(SUBDIRS)
 $(SUBDIRS):
