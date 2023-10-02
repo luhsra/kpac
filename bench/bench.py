@@ -211,9 +211,7 @@ class Bench(Experiment):
             self.o.build.append([k, inst[k][0], inst[k][1], auths[k]])
 
     def symlink_name(self):
-        x = f"{to_pascal_case(self.i.suite.value)}-{self.i.host.value}-" + \
-            f"{self.i.backend.value}-{self.i.scope.value}-" + \
-            f"[{self.i.cflags.value}]-[{self.i.cpumasks.value}]"
+        x = f"{to_pascal_case(self.i.suite.value)}-{self.i.host.value}"
         return x
 
 if __name__ == "__main__":
@@ -222,5 +220,5 @@ if __name__ == "__main__":
     import timing
 
     experiment = Bench()
-    dirname = experiment(sys.argv + ["-s"])
+    dirname = experiment(sys.argv)
     print(dirname)
