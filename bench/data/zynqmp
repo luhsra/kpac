@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+suite=tacle-bench-full
+
+taskset -cp 2 $$
+renice -n -20 $$
+
+### Disable kpacd
+echo | tee /sys/kernel/debug/kpacd/*/cpumask
+
+# baseline
+../bench.py --suite "$suite"
+
+# full virtualization
+env CFLAGS="-mbranch-protection=pac-ret" LD_PRELOAD="$HOME/pac-sw/virt/virtpac.so" ../bench.py --suite "$suite"
+
+# pac-pl
+LD_PRELOAD=$HOME/pac-sw/pac-pl/pac-pl.so ../bench.py --suite "$suite" --variant pac-pl --scope all
+LD_PRELOAD=$HOME/pac-sw/pac-pl/pac-pl.so ../bench.py --suite "$suite" --variant pac-pl --scope strong
+
+# syscall
+../bench.py --suite "$suite" --variant syscall --scope all
+../bench.py --suite "$suite" --variant syscall --scope strong
+
+### Enable kpacd
+echo 2 > /sys/kernel/debug/kpacd/3/cpumask
+
+# kpacd
+../bench.py --suite "$suite" --variant kpacd --scope all
+../bench.py --suite "$suite" --variant kpacd --scope strong
