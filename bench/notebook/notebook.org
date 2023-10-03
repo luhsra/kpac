@@ -8,6 +8,8 @@
   import matplotlib.pyplot as plt
   from os import path
 
+  from pprint import pprint
+
   from versuchung.search import *
 
   import sys
@@ -20,14 +22,14 @@
 
   query = {
       "suite": "tacle-bench-full",
-      "host": "lab-pc61",
-      "cflags": "-O0",
-      "backend": "qarma",
-      "cpumasks": "3=2",
-      "scope": "all",
+      "host": "zynqmp",
+      "cflags": "-mbranch-protection=pac-ret",
+      "ld_preload": "/root/pac-sw/virt/virtpac.so",
+      #"variant": "kpacd",
+      #"scope": "strong",
   }
 
-  exp = search_experiment(bench.Bench, "../data", query)
+  exp = search_experiment(bench.Bench, "../data/", query)
   pac_raw_orig = dict(np.load(exp.o.pac.path))
 
   pac_raw = pac_raw_orig
@@ -35,6 +37,7 @@
   benchmarks = list(pac_raw_orig.keys())
 
   print(exp.path)
+  pprint(exp.metadata)
 #+end_src
 
 ** Remove outliers
@@ -95,10 +98,16 @@
 ** Load baseline
 
 #+begin_src python :results value raw
-  query_nil = query.copy()
-  query_nil['scope'] = 'nil'
+  query_nil = {
+      'suite': query['suite'],
+      'host': query['host'],
+      'scope': 'nil',
+      #'cflags': '',
+      'ld_preload': ''
+  }
 
   exp_nil = search_experiment(bench.Bench, "../data", query_nil)
+  print(exp_nil)
 
   nopac_raw_orig = dict(np.load(exp_nil.o.pac.path))
   nopac_raw = nopac_raw_orig
