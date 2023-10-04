@@ -176,6 +176,7 @@ class Bench(Experiment):
 
         "cflags":     get_env("CFLAGS"),
         "ld_preload": get_env("LD_PRELOAD"),
+        "libpac_pv":  get_env("LIBPAC_PV"),
     }
 
     outputs = {
