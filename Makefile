@@ -1,6 +1,6 @@
 TOPTARGETS := all clean
 
-SUBDIRS := gcc libpac bench pac-pl
+SUBDIRS := gcc libkpac bench pac-pl
 
 $(TOPTARGETS): $(SUBDIRS)
 $(SUBDIRS):

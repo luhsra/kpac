@@ -1,5 +1,5 @@
-#ifndef LIBPAC_ASM_H
-#define LIBPAC_ASM_H
+#ifndef LIBKPAC_ASM_H
+#define LIBKPAC_ASM_H
 
 #include <stdint.h>
 
@@ -188,4 +188,4 @@ static bool add_imm(inst_t x, int *rn, int *rd)
     return true;
 }
 
-#endif                          /* LIBPAC_ASM_H */
+#endif                          /* LIBKPAC_ASM_H */

@@ -1,8 +1,8 @@
-TARGET = libpac.so
+TARGET = libkpac.so
 
 DEBUG_FLAGS = $(if $(DEBUG), -g -DDEBUG, -O2)
 
-OBJS = libpac.o kpacd.o
+OBJS = libkpac.o kpacd.o
 
 CFLAGS = -fPIC -Wall -Wextra -Wno-unused $(DEBUG_FLAGS)
 LDFLAGS = $(DEBUG_FLAGS)

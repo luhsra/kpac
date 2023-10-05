@@ -7,22 +7,22 @@
 #define REG_TWEAK		16
 #define REG_CIPHER		24
 
-	.section text_pac_procs, "ax"
+	.section text_kpac, "ax"
 
 	/* We cannot make any assumptions about the code's optimization level,
 	 * so the compiler may do whatever it pleases with volatile registers,
 	 * including not saving them in the caller.  Act pessimistically and
 	 * save them on the stack. */
 
-	.global do_pac_8
-do_pac_8:
+	.global kpac_pac_8
+kpac_pac_8:
 	/* lr is at [sp+8] */
 	str	x10, [sp, #-8]
 	add	x10, sp, 8
 	b	2f
 
-	.global do_pac_0
-do_pac_0:
+	.global kpac_pac_0
+kpac_pac_0:
 	/* lr is at [sp] */
 	str	x10, [sp, #-8]
 	mov	x10, sp
@@ -49,15 +49,15 @@ do_pac_0:
 
 	ret
 
-	.global do_aut_8
-do_aut_8:
+	.global kpac_aut_8
+kpac_aut_8:
 	/* lr is at [sp+8] */
 	str	x10, [sp, #-8]
 	add	x10, sp, 8
 	b	2f
 
-	.global do_aut_0
-do_aut_0:
+	.global kpac_aut_0
+kpac_aut_0:
 	/* lr is at [sp] */
 	str	x10, [sp, #-8]
 	mov	x10, sp

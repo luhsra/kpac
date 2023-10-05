@@ -17,7 +17,7 @@
 #define ALIGN_UP(x, a)		ALIGN_MASK(x, (__typeof__(x))(a) - 1)
 
 #ifdef DEBUG
-#define log(fmt, ...) fprintf(stderr, "libpac: " fmt "\n", ##__VA_ARGS__)
+#define log(fmt, ...) fprintf(stderr, "libkpac: " fmt "\n", ##__VA_ARGS__)
 #else
 #define log(fmt, ...) ((void) 0)
 #endif
@@ -36,20 +36,20 @@ struct pac_procs {
 
 extern char *program_invocation_name;
 
-extern char __start_text_pac_procs;
-extern void do_pac_8(void);
-extern void do_pac_0(void);
-extern void do_aut_8(void);
-extern void do_aut_0(void);
-extern char __stop_text_pac_procs;
+extern char __start_text_kpac;
+extern void kpac_pac_8(void);
+extern void kpac_pac_0(void);
+extern void kpac_aut_8(void);
+extern void kpac_aut_0(void);
+extern char __stop_text_kpac;
 
-static bool pv_mode = false;
+static bool svc_mode = false;
 
 static bool patch_paciasp(inst_t *text, size_t len, size_t i, struct pac_procs *procs)
 {
     int rn, rd, rt1, rt2, off;
 
-    if (!pv_mode || i + 1 >= len)
+    if (svc_mode || i + 1 >= len)
         goto fallback;
 
     /* paciasp
@@ -109,7 +109,7 @@ static bool patch_autiasp(inst_t *text, size_t len, size_t i, struct pac_procs *
 {
     int rn, rd, rt1, rt2, off;
 
-    if (!pv_mode || i < 1)
+    if (svc_mode || i < 1)
         goto fallback;
 
     /* ldp x29, x30, [sp], #N
@@ -189,8 +189,8 @@ static int phdr_patch(inst_t *text, size_t len, struct pac_procs *procs)
 
 static void allocate_procs(uintptr_t vaddr_end, struct pac_procs *procs)
 {
-    uintptr_t procs_start = (uintptr_t) &__start_text_pac_procs;
-    uintptr_t procs_stop  = (uintptr_t) &__stop_text_pac_procs;
+    uintptr_t procs_start = (uintptr_t) &__start_text_kpac;
+    uintptr_t procs_stop  = (uintptr_t) &__stop_text_kpac;
 
     size_t procs_len = procs_stop - procs_start;
 
@@ -211,10 +211,10 @@ static void allocate_procs(uintptr_t vaddr_end, struct pac_procs *procs)
     if (ret)
         die("mprotect: %s", strerror(errno));
 
-    procs->pac_0 = addr + ((uintptr_t) do_pac_0 - procs_start);
-    procs->pac_8 = addr + ((uintptr_t) do_pac_8 - procs_start);
-    procs->aut_0 = addr + ((uintptr_t) do_aut_0 - procs_start);
-    procs->aut_8 = addr + ((uintptr_t) do_aut_8 - procs_start);
+    procs->pac_0 = addr + ((uintptr_t) kpac_pac_0 - procs_start);
+    procs->pac_8 = addr + ((uintptr_t) kpac_pac_8 - procs_start);
+    procs->aut_0 = addr + ((uintptr_t) kpac_aut_0 - procs_start);
+    procs->aut_8 = addr + ((uintptr_t) kpac_aut_8 - procs_start);
 }
 
 static int phdr_callback(struct dl_phdr_info *info, size_t _size, void *_data)
@@ -226,7 +226,7 @@ static int phdr_callback(struct dl_phdr_info *info, size_t _size, void *_data)
         filename = info->dlpi_name;
 
     if (!strcmp(filename, "linux-vdso.so.1") ||
-        !strcmp(filename, "libpac.so")) {
+        !strcmp(filename, "libkpac.so")) {
         log("[%d:%s] skipping", cnt, filename);
         return 0;
     }
@@ -264,11 +264,11 @@ static int phdr_callback(struct dl_phdr_info *info, size_t _size, void *_data)
 }
 
 __attribute__ ((constructor))
-void libpac_init()
+void libkpac_init()
 {
-    char *pv_mode_env = getenv("LIBPAC_PV");
-    if (pv_mode_env && !strcmp(pv_mode_env, "1"))
-        pv_mode = true;
+    char *svc_env = getenv("LIBKPAC_SVC");
+    if (svc_env && !strcmp(svc_env, "1"))
+        svc_mode = true;
 
     if (dl_iterate_phdr(phdr_callback, NULL))
         die("dl_iterate_phdr");
