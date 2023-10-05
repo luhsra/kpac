@@ -29,21 +29,23 @@
         exit(EXIT_FAILURE);                                             \
     } while (0)
 
+struct pac_procs {
+    void *pac_0, *pac_8;
+    void *aut_0, *aut_8;
+};
+
 extern char *program_invocation_name;
 
-extern char __start_text_do_pac;
+extern char __start_text_pac_procs;
 extern void do_pac_8(void);
 extern void do_pac_0(void);
-extern char __stop_text_do_pac;
-
-extern char __start_text_do_aut;
 extern void do_aut_8(void);
 extern void do_aut_0(void);
-extern char __stop_text_do_aut;
+extern char __stop_text_pac_procs;
 
 static bool pv_mode = false;
 
-static bool patch_paciasp(inst_t *text, size_t len, size_t i, inst_t *pac[2])
+static bool patch_paciasp(inst_t *text, size_t len, size_t i, struct pac_procs *procs)
 {
     int rn, rd, rt1, rt2, off;
 
@@ -56,7 +58,7 @@ static bool patch_paciasp(inst_t *text, size_t len, size_t i, inst_t *pac[2])
         rn == REG_SP && (rt1 == REG_LR || rt2 == REG_LR)) {
 
         text[i] = text[i+1];
-        emit_bl(&text[i+1], pac[rt1 == REG_LR ? 0 : 1]);
+        emit_bl(&text[i+1], rt1 == REG_LR ? procs->pac_0 : procs->pac_8);
         return true;
     }
 
@@ -66,7 +68,7 @@ static bool patch_paciasp(inst_t *text, size_t len, size_t i, inst_t *pac[2])
         rn == REG_SP && rt1 == REG_LR) {
 
         text[i] = text[i+1];
-        emit_bl(&text[i+1], pac[0]);
+        emit_bl(&text[i+1], procs->pac_0);
         return true;
     }
 
@@ -83,7 +85,7 @@ static bool patch_paciasp(inst_t *text, size_t len, size_t i, inst_t *pac[2])
 
             text[i] = text[i+1];
             text[i+1] = text[i+2];
-            emit_bl(&text[i+2], pac[rt1 == REG_LR ? 0 : 1]);
+            emit_bl(&text[i+2], rt1 == REG_LR ? procs->pac_0 : procs->pac_8);
             return true;
         }
 
@@ -93,7 +95,7 @@ static bool patch_paciasp(inst_t *text, size_t len, size_t i, inst_t *pac[2])
 
             text[i] = text[i+1];
             text[i+1] = text[i+2];
-            emit_bl(&text[i+2], pac[0]);
+            emit_bl(&text[i+2], procs->pac_0);
             return true;
         }
     }
@@ -103,7 +105,7 @@ fallback:
     return false;
 }
 
-static bool patch_autiasp(inst_t *text, size_t len, size_t i, inst_t *aut[2])
+static bool patch_autiasp(inst_t *text, size_t len, size_t i, struct pac_procs *procs)
 {
     int rn, rd, rt1, rt2, off;
 
@@ -116,7 +118,7 @@ static bool patch_autiasp(inst_t *text, size_t len, size_t i, inst_t *aut[2])
         rn == REG_SP && (rt1 == REG_LR || rt2 == REG_LR)) {
 
         text[i] = text[i-1];
-        emit_bl(&text[i-1], aut[rt1 == REG_LR ? 0 : 1]);
+        emit_bl(&text[i-1], rt1 == REG_LR ? procs->aut_0 : procs->aut_8);
         return true;
     }
 
@@ -126,7 +128,7 @@ static bool patch_autiasp(inst_t *text, size_t len, size_t i, inst_t *aut[2])
         rn == REG_SP && rt1 == REG_LR) {
 
         text[i] = text[i-1];
-        emit_bl(&text[i-1], aut[0]);
+        emit_bl(&text[i-1], procs->aut_0);
         return true;
     }
 
@@ -143,7 +145,7 @@ static bool patch_autiasp(inst_t *text, size_t len, size_t i, inst_t *aut[2])
 
             text[i] = text[i-1];
             text[i-1] = text[i-2];
-            emit_bl(&text[i-2], aut[rt1 == REG_LR ? 0 : 1]);
+            emit_bl(&text[i-2], rt1 == REG_LR ? procs->aut_0 : procs->aut_8);
             return true;
         }
 
@@ -153,7 +155,7 @@ static bool patch_autiasp(inst_t *text, size_t len, size_t i, inst_t *aut[2])
 
             text[i] = text[i-1];
             text[i-1] = text[i-2];
-            emit_bl(&text[i-2], aut[0]);
+            emit_bl(&text[i-2], procs->aut_0);
             return true;
         }
     }
@@ -163,18 +165,18 @@ fallback:
     return false;
 }
 
-static int phdr_patch(inst_t *text, size_t len, inst_t *pac[2], inst_t *aut[2])
+static int phdr_patch(inst_t *text, size_t len, struct pac_procs *procs)
 {
     for (size_t i = 0; i < len; i++) {
         switch (text[i]) {
         case INST_PACIASP:
-            if (patch_paciasp(text, len, i, pac))
+            if (patch_paciasp(text, len, i, procs))
                 log("%p patched pac call", &text[i]);
             else
                 log("%p patched pac svc", &text[i]);
             break;
         case INST_AUTIASP:
-            if (patch_autiasp(text, len, i, aut))
+            if (patch_autiasp(text, len, i, procs))
                 log("%p patched aut call", &text[i]);
             else
                 log("%p patched aut svc", &text[i]);
@@ -185,39 +187,34 @@ static int phdr_patch(inst_t *text, size_t len, inst_t *pac[2], inst_t *aut[2])
     return 0;
 }
 
-static void allocate_routines(uintptr_t vaddr_end, inst_t *pac[2], inst_t *aut[2])
+static void allocate_procs(uintptr_t vaddr_end, struct pac_procs *procs)
 {
-    uintptr_t pac_start = (uintptr_t) &__start_text_do_pac;
-    uintptr_t pac_stop = (uintptr_t) &__stop_text_do_pac;
-    uintptr_t aut_start = (uintptr_t) &__start_text_do_aut;
-    uintptr_t aut_stop = (uintptr_t) &__stop_text_do_aut;
+    uintptr_t procs_start = (uintptr_t) &__start_text_pac_procs;
+    uintptr_t procs_stop  = (uintptr_t) &__stop_text_pac_procs;
 
-    size_t pac_len = pac_stop - pac_start;
-    size_t aut_len = aut_stop - aut_start;
+    size_t procs_len = procs_stop - procs_start;
 
     vaddr_end = ALIGN_UP(vaddr_end, PAGE_SIZE);
 
     /* Allocate a page for pac/aut routines within +-128 MiB of the segment.
      * They must be callable using BL instruction. */
     uintptr_t min = vaddr_end - 128 * 1024 * 1024;
-    void *addr = mmap((void *) min, pac_len+aut_len,
-                          PROT_READ | PROT_WRITE,
-                          MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    void *addr = mmap((void *) min, procs_len,
+                      PROT_READ | PROT_WRITE,
+                      MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (addr == MAP_FAILED)
         die("mmap: %s", strerror(errno));
 
-    pac[0] = addr + ((uintptr_t) do_pac_0 - pac_start);
-    pac[1] = addr + ((uintptr_t) do_pac_8 - pac_start);
+    memcpy(addr, (void *) procs_start, procs_len);
 
-    aut[0] = addr + pac_len + ((uintptr_t) do_aut_0 - aut_start);
-    aut[1] = addr + pac_len + ((uintptr_t) do_aut_8 - aut_start);
-
-    memcpy(addr,         (void *) pac_start, pac_len);
-    memcpy(addr+pac_len, (void *) aut_start, aut_len);
-
-    int ret = mprotect(addr, pac_len+aut_len, PROT_READ | PROT_EXEC);
+    int ret = mprotect(addr, procs_len, PROT_READ | PROT_EXEC);
     if (ret)
         die("mprotect: %s", strerror(errno));
+
+    procs->pac_0 = addr + ((uintptr_t) do_pac_0 - procs_start);
+    procs->pac_8 = addr + ((uintptr_t) do_pac_8 - procs_start);
+    procs->aut_0 = addr + ((uintptr_t) do_aut_0 - procs_start);
+    procs->aut_8 = addr + ((uintptr_t) do_aut_8 - procs_start);
 }
 
 static int phdr_callback(struct dl_phdr_info *info, size_t _size, void *_data)
@@ -246,8 +243,8 @@ static int phdr_callback(struct dl_phdr_info *info, size_t _size, void *_data)
         size_t size = phdr->p_memsz;
         inst_t *vaddr_end = (inst_t *) ((uintptr_t) vaddr_start + size);
 
-        inst_t *pac[2], *aut[2];
-        allocate_routines((uintptr_t) vaddr_end, pac, aut);
+        struct pac_procs procs = { 0 };
+        allocate_procs((uintptr_t) vaddr_end, &procs);
 
         log("[%d:%s] patching segment %p-%p", cnt, filename, vaddr_start, vaddr_end);
 
@@ -255,7 +252,7 @@ static int phdr_callback(struct dl_phdr_info *info, size_t _size, void *_data)
         if (mprotect(vaddr_start, size, PROT_READ | PROT_EXEC | PROT_WRITE))
             die("mprotect: %s", strerror(errno));
 
-        phdr_patch(vaddr_start, vaddr_end-vaddr_start, pac, aut);
+        phdr_patch(vaddr_start, vaddr_end-vaddr_start, &procs);
 
         if (mprotect(vaddr_start, size, PROT_READ | PROT_EXEC))
             die("mprotect: %s", strerror(errno));
