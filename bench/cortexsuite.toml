@@ -1,39 +1,44 @@
-warmup = 1
-samples = 10
+warmup = 0
+samples = 5
 
 build_cmd = "make clean && make compile \"CFLAGS=$CFLAGS\""
-run_cmd = "make run-medium"
+run_cmd = "make run-small"
 
 [benchmarks.liblinear]
 path = "cortexsuite/cortex/liblinear"
+run_cmd = "make run-medium"
 
 [benchmarks.kmeans]
 path = "cortexsuite/cortex/clustering/kmeans"
+run_cmd = "make run-large"
 
 [benchmarks.spectral]
 path = "cortexsuite/cortex/clustering/spectral"
 
-# Watch out - auths are different every run
 [benchmarks.lda]
 path = "cortexsuite/cortex/lda"
 
 [benchmarks.motion-estimation]
 path = "cortexsuite/cortex/motion-estimation"
+run_cmd = "make run-large"
 
 [benchmarks.pca]
 path = "cortexsuite/cortex/pca"
 
 [benchmarks.rbm]
 path = "cortexsuite/cortex/rbm"
+run_cmd = "make run-medium"
 
 [benchmarks.sphinx]
 path = "cortexsuite/cortex/sphinx"
+run_cmd = "make run-medium"
 
 [benchmarks.srr]
 path = "cortexsuite/cortex/srr"
 
 [benchmarks.svd3]
 path = "cortexsuite/cortex/svd3"
+run_cmd = "make run-medium"
 
 # TODO: segfaults in malloc
 # [benchmarks.cnn]

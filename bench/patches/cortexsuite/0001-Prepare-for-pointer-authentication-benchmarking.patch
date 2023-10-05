@@ -179,7 +179,7 @@ index 0a63d2f..90518bf 100644
  
  
 diff --git a/cortex/lda/Makefile b/cortex/lda/Makefile
-index 0c94639..ed3d2de 100644
+index 0c94639..51b43a3 100644
 --- a/cortex/lda/Makefile
 +++ b/cortex/lda/Makefile
 @@ -5,13 +5,12 @@ TOP_DIR = $(shell pwd)
@@ -202,15 +202,15 @@ index 0c94639..ed3d2de 100644
  
  run-small:
 -	-./lda-small est .1 3 settings.txt small/small_data.dat random small/result 2>&1 | tee ../results/lda.small
-+	./lda-small est .1 3 settings.txt small/small_data.dat random small/result 2>&1 | tee ../results/lda.small
++	./lda-small est .1 3 settings.txt small/small_data.dat seeded small/result 2>&1 | tee ../results/lda.small
  
  run-medium:
 -	-./lda-medium est .1 3 settings.txt medium/medium_data.dat random medium/results 2>&1 | tee ../results/lda.medium
-+	./lda-medium est .1 3 settings.txt medium/medium_data.dat random medium/results 2>&1 | tee ../results/lda.medium
++	./lda-medium est .1 3 settings.txt medium/medium_data.dat seeded medium/results 2>&1 | tee ../results/lda.medium
  
  run-large:
 -	-./lda-large est .1 3 settings.txt large/large_data.dat random large/results 2>&1 | tee ../results/lda.large
-+	./lda-large est .1 3 settings.txt large/large_data.dat random large/results 2>&1 | tee ../results/lda.large
++	./lda-large est .1 3 settings.txt large/large_data.dat seeded large/results 2>&1 | tee ../results/lda.large
  
  clean:
  	-rm -f *.o lda-small lda-medium lda-large
