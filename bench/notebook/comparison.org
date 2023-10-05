@@ -27,42 +27,58 @@
 * Load variants
 
 #+begin_src python :results output
-  exps = {
-      'baseline':
-      {'query': { 'scope': 'nil',
-                  'ld_preload': '' }},
-      'svc':
-      {'query': { 'scope': 'nil',
-                  'ld_preload': '/root/pac-sw/virt/virtpac.so' }},
-      'pac-pl (all)':
-      {'query': { 'scope': 'all',
-                  'ld_preload': '/root/pac-sw/pac-pl/pac-pl.so' }},
-      'pac-pl (strong)':
-      {'query': { 'scope': 'strong',
-                  'ld_preload': '/root/pac-sw/pac-pl/pac-pl.so' }},
-      'syscall (all)':
-      {'query': { 'scope': 'all',
-                  'variant': 'syscall',
-                  'ld_preload': '' }},
-      'syscall (strong)':
-      {'query': { 'scope': 'strong',
-                  'variant': 'syscall',
-                  'ld_preload': '' }},
-      'kpacd (all)':
-      {'query': { 'scope': 'all',
-                  'variant': 'kpacd',
-                  'ld_preload': '' }},
-      'kpacd (strong)':
-      {'query': { 'scope': 'strong',
-                  'variant': 'kpacd',
-                  'ld_preload': '' }},
-  }
+    exps = {
+        'baseline':
+        {'query': { 'scope': 'nil',
+                    'ld_preload': '' }},
+        'svc':
+        {'query': { 'scope': 'nil',
+                    'ld_preload': '/root/pac-sw/libkpac/libkpac.so',
+                    'libkpac_svc': '1' }},
+        'paravirt':
+        {'query': { 'scope': 'nil',
+                    'ld_preload': '/root/pac-sw/libkpac/libkpac.so',
+                    'libkpac_svc': '0' }},
+        'pac-pl (all)':
+        {'query': { 'scope': 'all',
+                    'ld_preload': '/root/pac-sw/pac-pl/pac-pl.so' }},
+        'pac-pl (strong)':
+        {'query': { 'scope': 'strong',
+                    'ld_preload': '/root/pac-sw/pac-pl/pac-pl.so' }},
+        'pac-pl (char)':
+        {'query': { 'scope': 'char',
+                    'ld_preload': '/root/pac-sw/pac-pl/pac-pl.so' }},
+        'syscall (all)':
+        {'query': { 'scope': 'all',
+                    'variant': 'syscall',
+                    'ld_preload': '' }},
+        'syscall (strong)':
+        {'query': { 'scope': 'strong',
+                    'variant': 'syscall',
+                    'ld_preload': '' }},
+        'syscall (char)':
+        {'query': { 'scope': 'char',
+                    'variant': 'syscall',
+                    'ld_preload': '' }},
+        'kpacd (all)':
+        {'query': { 'scope': 'all',
+                    'variant': 'kpacd',
+                    'ld_preload': '' }},
+        'kpacd (strong)':
+        {'query': { 'scope': 'strong',
+                    'variant': 'kpacd',
+                    'ld_preload': '' }},
+        'kpacd (char)':
+        {'query': { 'scope': 'char',
+                    'variant': 'kpacd',
+                    'ld_preload': '' }},
+    }
 
-  for k in exps:
-      exps[k]['exp'] = search_experiment(bench.Bench, "../data", exps[k]['query'])
+    for k in exps:
+        exps[k]['exp'] = search_experiment(bench.Bench, "../data", exps[k]['query'])
 
-  for k, v in exps.items():
-      print(f'{k}: {v["exp"].path}')
+    for k, v in exps.items():
+        print(f'{k}: {v["exp"].path}')
 #+end_src
 
 * Derive overhead
@@ -73,7 +89,7 @@
   df['mean'] = df.apply(lambda x: np.mean(
       dict(np.load(x['exp'].o.pac.path))[benchmark]), axis=1)
   df['freq'] = df.apply(lambda x: int(x['exp'].o.scaling_cur_freq.value)*1e3, axis=1)
-  df['auths'] = df.apply(lambda x: pd.read_csv(x['exp'].o.build.path, index_col='name')['auths']['ammunition'], axis=1)
+  df['auths'] = df.apply(lambda x: pd.read_csv(x['exp'].o.build.path, index_col='name')['auths'][benchmark], axis=1)
 
   # pac-pl does not report auths
   df.at['pac-pl (all)', 'auths'] = df.loc['syscall (all)']['auths']
