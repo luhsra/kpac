@@ -4,74 +4,174 @@ warmup = 5
 build_cmd = "gcc $CFLAGS -o exe *.c"
 run_cmd   = "./exe"
 
-[benchmarks.ammunition]
-path = "tacle-bench/bench/sequential/ammunition"
-
-[benchmarks.anagram]
-path = "tacle-bench/bench/sequential/anagram"
-
-[benchmarks.audiobeam]
-path = "tacle-bench/bench/sequential/audiobeam"
-
-[benchmarks.bitcount]
-path = "tacle-bench/bench/kernel/bitcount"
-
-[benchmarks.cjpeg_wrbmp]
-path = "tacle-bench/bench/sequential/cjpeg_wrbmp"
-
-[benchmarks.filterbank]
-path = "tacle-bench/bench/kernel/filterbank"
-
-[benchmarks.fmref]
-path = "tacle-bench/bench/sequential/fmref"
-
-[benchmarks.gsm_dec]
-path = "tacle-bench/bench/sequential/gsm_dec"
-
-[benchmarks.gsm_enc]
-path = "tacle-bench/bench/sequential/gsm_enc"
-
-[benchmarks.huff_dec]
-path = "tacle-bench/bench/sequential/huff_dec"
-
-[benchmarks.huff_enc]
-path = "tacle-bench/bench/sequential/huff_enc"
-
-[benchmarks.insertsort]
-path = "tacle-bench/bench/kernel/insertsort"
-
-[benchmarks.isqrt] # aka basicmath in Gabriele's PAC-PL paper
-path = "tacle-bench/bench/kernel/isqrt"
-
-[benchmarks.lms]
-path = "tacle-bench/bench/kernel/lms"
-
-[benchmarks.ludcmp]
-path = "tacle-bench/bench/kernel/ludcmp"
-
-[benchmarks.md5]
-path = "tacle-bench/bench/kernel/md5"
-
-[benchmarks.minver]
-path = "tacle-bench/bench/kernel/minver"
-
-[benchmarks.mpeg2]
-path = "tacle-bench/bench/sequential/mpeg2"
-
-[benchmarks.ndes]
-path = "tacle-bench/bench/sequential/ndes"
-
 [benchmarks.powerwindow]
 path = "tacle-bench/bench/app/powerwindow"
+
+[benchmarks.lift]
+path = "tacle-bench/bench/app/lift"
+
+[benchmarks.ammunition]
+path = "tacle-bench/bench/sequential/ammunition"
 
 [benchmarks.rijndael_dec]
 path = "tacle-bench/bench/sequential/rijndael_dec"
 
+[benchmarks.ndes]
+path = "tacle-bench/bench/sequential/ndes"
+
+[benchmarks.gsm_enc]
+path = "tacle-bench/bench/sequential/gsm_enc"
+
+[benchmarks.gsm_dec]
+path = "tacle-bench/bench/sequential/gsm_dec"
+
+[benchmarks.fmref]
+path = "tacle-bench/bench/sequential/fmref"
+
+[benchmarks.h264_dec]
+path = "tacle-bench/bench/sequential/h264_dec"
+
 [benchmarks.rijndael_enc]
 path = "tacle-bench/bench/sequential/rijndael_enc"
+
+[benchmarks.audiobeam]
+path = "tacle-bench/bench/sequential/audiobeam"
+
+[benchmarks.epic]
+path = "tacle-bench/bench/sequential/epic"
+
+[benchmarks.huff_dec]
+path = "tacle-bench/bench/sequential/huff_dec"
+
+[benchmarks.anagram]
+path = "tacle-bench/bench/sequential/anagram"
+
+[benchmarks.dijkstra]
+path = "tacle-bench/bench/sequential/dijkstra"
+
+[benchmarks.g723_enc]
+path = "tacle-bench/bench/sequential/g723_enc"
+
+[benchmarks.huff_enc]
+path = "tacle-bench/bench/sequential/huff_enc"
+
+[benchmarks.cjpeg_transupp]
+path = "tacle-bench/bench/sequential/cjpeg_transupp"
+
+[benchmarks.adpcm_enc]
+path = "tacle-bench/bench/sequential/adpcm_enc"
+
+[benchmarks.cjpeg_wrbmp]
+path = "tacle-bench/bench/sequential/cjpeg_wrbmp"
+
+[benchmarks.petrinet]
+path = "tacle-bench/bench/sequential/petrinet"
+
+[benchmarks.susan]
+path = "tacle-bench/bench/sequential/susan"
+
+[benchmarks.adpcm_dec]
+path = "tacle-bench/bench/sequential/adpcm_dec"
+
+[benchmarks.statemate]
+path = "tacle-bench/bench/sequential/statemate"
+
+[benchmarks.mpeg2]
+path = "tacle-bench/bench/sequential/mpeg2"
+
+[benchmarks.cover]
+path = "tacle-bench/bench/test/cover"
+
+[benchmarks.test3]
+path = "tacle-bench/bench/test/test3"
+
+[benchmarks.duff]
+path = "tacle-bench/bench/test/duff"
+
+[benchmarks.filterbank]
+path = "tacle-bench/bench/kernel/filterbank"
+
+[benchmarks.lms]
+path = "tacle-bench/bench/kernel/lms"
+
+[benchmarks.minver]
+path = "tacle-bench/bench/kernel/minver"
+
+[benchmarks.md5]
+path = "tacle-bench/bench/kernel/md5"
+
+[benchmarks.countnegative]
+path = "tacle-bench/bench/kernel/countnegative"
+
+[benchmarks.bitcount]
+path = "tacle-bench/bench/kernel/bitcount"
+
+[benchmarks.quicksort]
+path = "tacle-bench/bench/kernel/quicksort"
+
+[benchmarks.matrix1]
+path = "tacle-bench/bench/kernel/matrix1"
+
+[benchmarks.isqrt]
+path = "tacle-bench/bench/kernel/isqrt"
+
+[benchmarks.deg2rad]
+path = "tacle-bench/bench/kernel/deg2rad"
+
+[benchmarks.bsort]
+path = "tacle-bench/bench/kernel/bsort"
+
+[benchmarks.st]
+path = "tacle-bench/bench/kernel/st"
+
+[benchmarks.fir2dim]
+path = "tacle-bench/bench/kernel/fir2dim"
+
+[benchmarks.pm]
+path = "tacle-bench/bench/kernel/pm"
 
 [benchmarks.sha]
 path = "tacle-bench/bench/kernel/sha"
 
-[benchmarks.susan]
-path = "tacle-bench/bench/sequential/susan"
+[benchmarks.binarysearch]
+path = "tacle-bench/bench/kernel/binarysearch"
+
+[benchmarks.fac]
+path = "tacle-bench/bench/kernel/fac"
+
+[benchmarks.ludcmp]
+path = "tacle-bench/bench/kernel/ludcmp"
+
+[benchmarks.iir]
+path = "tacle-bench/bench/kernel/iir"
+
+[benchmarks.jfdctint]
+path = "tacle-bench/bench/kernel/jfdctint"
+
+[benchmarks.complex_updates]
+path = "tacle-bench/bench/kernel/complex_updates"
+
+[benchmarks.rad2deg]
+path = "tacle-bench/bench/kernel/rad2deg"
+
+[benchmarks.insertsort]
+path = "tacle-bench/bench/kernel/insertsort"
+
+[benchmarks.recursion]
+path = "tacle-bench/bench/kernel/recursion"
+
+[benchmarks.prime]
+path = "tacle-bench/bench/kernel/prime"
+
+[benchmarks.fft]
+path = "tacle-bench/bench/kernel/fft"
+
+[benchmarks.cosf]
+path = "tacle-bench/bench/kernel/cosf"
+
+[benchmarks.bitonic]
+path = "tacle-bench/bench/kernel/bitonic"
+
+[benchmarks.cubic]
+path = "tacle-bench/bench/kernel/cubic"
+

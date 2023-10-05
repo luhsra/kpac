@@ -1,0 +1,77 @@
+samples = 50
+warmup = 5
+
+build_cmd = "gcc $CFLAGS -o exe *.c"
+run_cmd   = "./exe"
+
+[benchmarks.ammunition]
+path = "tacle-bench/bench/sequential/ammunition"
+
+[benchmarks.anagram]
+path = "tacle-bench/bench/sequential/anagram"
+
+[benchmarks.audiobeam]
+path = "tacle-bench/bench/sequential/audiobeam"
+
+[benchmarks.bitcount]
+path = "tacle-bench/bench/kernel/bitcount"
+
+[benchmarks.cjpeg_wrbmp]
+path = "tacle-bench/bench/sequential/cjpeg_wrbmp"
+
+[benchmarks.filterbank]
+path = "tacle-bench/bench/kernel/filterbank"
+
+[benchmarks.fmref]
+path = "tacle-bench/bench/sequential/fmref"
+
+[benchmarks.gsm_dec]
+path = "tacle-bench/bench/sequential/gsm_dec"
+
+[benchmarks.gsm_enc]
+path = "tacle-bench/bench/sequential/gsm_enc"
+
+[benchmarks.huff_dec]
+path = "tacle-bench/bench/sequential/huff_dec"
+
+[benchmarks.huff_enc]
+path = "tacle-bench/bench/sequential/huff_enc"
+
+[benchmarks.insertsort]
+path = "tacle-bench/bench/kernel/insertsort"
+
+[benchmarks.isqrt] # aka basicmath in Gabriele's PAC-PL paper
+path = "tacle-bench/bench/kernel/isqrt"
+
+[benchmarks.lms]
+path = "tacle-bench/bench/kernel/lms"
+
+[benchmarks.ludcmp]
+path = "tacle-bench/bench/kernel/ludcmp"
+
+[benchmarks.md5]
+path = "tacle-bench/bench/kernel/md5"
+
+[benchmarks.minver]
+path = "tacle-bench/bench/kernel/minver"
+
+[benchmarks.mpeg2]
+path = "tacle-bench/bench/sequential/mpeg2"
+
+[benchmarks.ndes]
+path = "tacle-bench/bench/sequential/ndes"
+
+[benchmarks.powerwindow]
+path = "tacle-bench/bench/app/powerwindow"
+
+[benchmarks.rijndael_dec]
+path = "tacle-bench/bench/sequential/rijndael_dec"
+
+[benchmarks.rijndael_enc]
+path = "tacle-bench/bench/sequential/rijndael_enc"
+
+[benchmarks.sha]
+path = "tacle-bench/bench/kernel/sha"
+
+[benchmarks.susan]
+path = "tacle-bench/bench/sequential/susan"

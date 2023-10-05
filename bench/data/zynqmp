@@ -2,7 +2,7 @@
 
 set -e
 
-suite=tacle-bench-full
+suite=tacle-bench
 
 taskset -cp 2 $$
 renice -n -20 $$
