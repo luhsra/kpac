@@ -10,8 +10,11 @@ ASMS_PP = $(ASMS:.S=.s)
 
 GCC_PLUGINS_DIR = $(shell $(TARGET_GCC) -print-file-name=plugin)
 
+GCC_VERSION := $(shell $(TARGET_GCC) --version | awk 'NR==1 { print $$NF }')
+
 # GCC CPP flags (we need pic and no-rtti)
-CXXFLAGS += -g -I$(GCC_PLUGINS_DIR)/include -fPIC -fno-rtti -DDEBUG -Wall -O2
+CXXFLAGS += -g -I$(GCC_PLUGINS_DIR)/include -fPIC -fno-rtti -DDEBUG -Wall -O2 \
+		-DPLUGIN_GCC_REQ=\"$(GCC_VERSION)\"
 
 .PHONY: all clean run_tests
 

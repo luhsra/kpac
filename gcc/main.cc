@@ -15,7 +15,6 @@
 #define PLUGIN_NAME "pac_sw_plugin"
 #define PLUGIN_VERSION "0.1"
 #define PLUGIN_HELP PLUGIN_NAME ": Instrumentation for Software-Emulated PAC."
-#define PLUGIN_GCC_REQ "12.2.0" // Required GCC version
 
 #define SCOPE_ATTR "pac_scope"
 
