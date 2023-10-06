@@ -269,6 +269,21 @@ index 0a63d2f..90518bf 100644
  }
  
  
+diff --git a/cortex/lda/lda-estimate.c b/cortex/lda/lda-estimate.c
+index 36db5c2..885e61d 100644
+--- a/cortex/lda/lda-estimate.c
++++ b/cortex/lda/lda-estimate.c
+@@ -315,8 +315,8 @@ int main(int argc, char* argv[])
+     unsigned int* start, *stop, *elapsed;
+ 
+     (void) time(&t1);
+-    seedMT(t1);
+-    // seedMT(4357U);
++    // seedMT(t1);
++    seedMT(4357U);
+ 
+     if (argc > 1)
+     {
 diff --git a/cortex/lda/lda-inference.c b/cortex/lda/lda-inference.c
 index d10fda3..d00b4b7 100644
 --- a/cortex/lda/lda-inference.c
