@@ -2,45 +2,64 @@ warmup = 0
 samples = 5
 
 build_cmd = "make clean && make compile \"CFLAGS=$CFLAGS\""
-run_cmd = "make run-small"
+run_cmd = "false"
 
 [benchmarks.liblinear]
 path = "cortexsuite/cortex/liblinear"
-run_cmd = "make run-medium"
+run_cmd = "./liblinear-tmedium data/10B/epsilon"
+# run_cmd = "make run-medium"
 
 [benchmarks.kmeans]
 path = "cortexsuite/cortex/clustering/kmeans"
-run_cmd = "make run-large"
+run_cmd = "./kmeans-large ../datasets/MINST 10000 748 10"
+# run_cmd = "make run-large"
 
 [benchmarks.spectral]
 path = "cortexsuite/cortex/clustering/spectral"
+run_cmd = "./spc-small ../datasets/R15 600 2 15 0.707 1"
+# run_cmd = "make run-small"
 
 [benchmarks.lda]
 path = "cortexsuite/cortex/lda"
+run_cmd = "./lda-small est .1 3 settings.txt small/small_data.dat seeded small/result"
+# run_cmd = "make run-small"
 
 [benchmarks.motion-estimation]
 path = "cortexsuite/cortex/motion-estimation"
-run_cmd = "make run-large"
+run_cmd = "./me-large"
+# run_cmd = "make run-large"
 
 [benchmarks.pca]
 path = "cortexsuite/cortex/pca"
+run_cmd = "./pca-small small.data 1593 256 R"
+# run_cmd = "make run-small"
 
 [benchmarks.rbm]
 path = "cortexsuite/cortex/rbm"
-run_cmd = "make run-medium"
+run_cmd = "./rbm-medium"
+# run_cmd = "make run-medium"
 
 [benchmarks.sphinx]
 path = "cortexsuite/cortex/sphinx"
-run_cmd = "make run-medium"
+run_cmd = "./sphinx medium/audio.raw language_model/HUB4/"
+# run_cmd = "make run-medium"
 
 [benchmarks.srr]
 path = "cortexsuite/cortex/srr"
+run_cmd = "./srr-small"
+# run_cmd = "make run-small"
 
 [benchmarks.svd3]
 path = "cortexsuite/cortex/svd3"
-run_cmd = "make run-medium"
+run_cmd = "./a.out med.txt"
+# run_cmd = "make run-medium"
 
-# TODO: segfaults in malloc
+# segfaults in malloc, after fix runs out of memory
 # [benchmarks.cnn]
 # path = "cortexsuite/cortex/cnn"
+# do_run = "make run"
+
+# hard to get running
+# [benchmarks.word2vec]
+# path = "cortexsuite/cortex/word2vec"
 # do_run = "make run"

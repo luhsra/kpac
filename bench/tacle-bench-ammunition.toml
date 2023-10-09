@@ -1,0 +1,8 @@
+samples = 50
+warmup = 5
+
+build_cmd = "gcc $CFLAGS -o exe *.c"
+run_cmd   = "./exe"
+
+[benchmarks.ammunition]
+path = "tacle-bench/bench/sequential/ammunition"
