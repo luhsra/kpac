@@ -6,6 +6,8 @@
   import numpy as np
   import pandas as pd
   import matplotlib.pyplot as plt
+  import csv
+  import copy
   from os import path
 
   from pprint import pprint
@@ -21,15 +23,19 @@
       return tabulate(df, headers=df.columns, tablefmt='orgtbl')
 
   query = {
-      "suite": "tacle-bench-full",
+      "suite": "cortexsuite",
       "host": "zynqmp",
-      "cflags": "-mbranch-protection=pac-ret",
-      "ld_preload": "/root/pac-sw/virt/virtpac.so",
+      "cflags": "-O2 -mbranch-protection=pac-ret",
+      #"cflags": "-O2",
+      "ld_preload": "/root/pac-sw/libkpac/libkpac.so",
+      "libkpac_svc": "0",
+      #"ld_preload": "",
       #"variant": "kpacd",
-      #"scope": "strong",
+      #"scope": "all",
   }
 
-  exp = search_experiment(bench.Bench, "../data/", query)
+  datapath = "../archive/libkpac-cortex/"
+  exp = search_experiment(bench.Bench, datapath, query)
   pac_raw_orig = dict(np.load(exp.o.pac.path))
 
   pac_raw = pac_raw_orig
@@ -40,8 +46,10 @@
   pprint(exp.metadata)
 #+end_src
 
+#+RESULTS:
+
 ** Remove outliers
-#+begin_src python :results value raw
+#+begin_src python :results value raw :noeval
   def mask_std(v, n):
       mean = v.mean()
       std = v.std()
@@ -56,8 +64,22 @@
   pd2org(masked_pd)
 #+end_src
 
+#+RESULTS:
+|                   | masked_pac |
+|-------------------+------------|
+| liblinear         |          0 |
+| kmeans            |          0 |
+| spectral          |          0 |
+| lda               |          0 |
+| motion-estimation |          0 |
+| pca               |          0 |
+| rbm               |          0 |
+| sphinx            |          0 |
+| srr               |          0 |
+| svd3              |          0 |
+
 ** Plot
-#+begin_src python :results file
+#+begin_src python :results file :noeval
   figure, axis = plt.subplots(len(benchmarks), 1, figsize=(40,160))
 
   i = 0
@@ -71,12 +93,76 @@
   f
 #+end_src
 
+#+RESULTS:
+[[file:raw.pdf]]
+
 * Statistics
 ** Functions
 #+begin_src python :results value raw
   build = pd.read_csv(exp.o.build.path, index_col='name')
   pd2org(build)
 #+end_src
+
+#+RESULTS:
+|                   | inst | total |       auths |
+|-------------------+------+-------+-------------|
+| liblinear         |    0 |   280 |       12520 |
+| kmeans            |    0 |    24 |           3 |
+| spectral          |    0 |    45 |           8 |
+| lda               |    0 |   111 | 5.73831e+07 |
+| motion-estimation |    0 |    45 |      182594 |
+| pca               |    0 |    45 |          12 |
+| rbm               |    0 |    54 | 3.20442e+06 |
+| sphinx            |    0 |   871 | 2.56076e+07 |
+| srr               |    0 |   108 |      878138 |
+| svd3              |    0 |    77 |      352754 |
+
+** libkpac
+
+#+begin_src python :results value raw
+  libkpac_raw = {}
+
+  for benchmark in benchmarks:
+      with open(os.path.join(exp.o.libkpac_stat.path, benchmark + '.csv')) as f:
+          reader = csv.reader(f, delimiter=',')
+          totals = list(filter(lambda x: x[2] == 'TOTAL', reader))
+
+          libkpac_raw[benchmark] = {
+              'times': np.asarray([float(i[3]) for i in totals]),
+              'pac': (int(totals[0][4]), int(totals[0][5])),
+              'aut': (int(totals[0][6]), int(totals[0][7]))
+          }
+
+  pac_raw_old = copy.deepcopy(pac_raw)
+
+  if 'libkpac.so' in exp.metadata['ld_preload']:
+      for k in pac_raw.keys():
+          pac_raw[k] = pac_raw[k] - libkpac_raw[k]['times']
+
+  libkpac = pd.DataFrame.from_dict(libkpac_raw, orient='index')
+  libkpac['avg'] = libkpac['times'].map(np.mean)
+  del libkpac['times']
+
+  libkpac['total_loci'] = libkpac.apply(lambda x: x['pac'][0]+x['aut'][0], axis=1)
+  libkpac['succ_loci'] = libkpac.apply(lambda x: x['pac'][1]+x['aut'][1], axis=1)
+  libkpac['ratio'] = libkpac['succ_loci'] / libkpac['total_loci']
+
+  pd2org(libkpac)
+#+end_src
+
+#+RESULTS:
+|                   | pac        | aut        |        avg | total_loci | succ_loci |    ratio |
+|-------------------+------------+------------+------------+------------+-----------+----------|
+| liblinear         | (56, 52)   | (61, 56)   |  0.0121285 |        117 |       108 | 0.923077 |
+| kmeans            | (4, 3)     | (4, 3)     | 0.00894593 |          8 |         6 |     0.75 |
+| spectral          | (9, 8)     | (9, 8)     |  0.0115434 |         18 |        16 | 0.888889 |
+| lda               | (26, 25)   | (27, 27)   |  0.0117373 |         53 |        52 | 0.981132 |
+| motion-estimation | (9, 8)     | (11, 10)   | 0.00895953 |         20 |        18 |      0.9 |
+| pca               | (9, 9)     | (8, 8)     |  0.0115274 |         17 |        17 |        1 |
+| rbm               | (13, 9)    | (13, 9)    |  0.0117999 |         26 |        18 | 0.692308 |
+| sphinx            | (640, 623) | (726, 710) |  0.0191563 |       1366 |      1333 | 0.975842 |
+| srr               | (18, 12)   | (19, 16)   | 0.00959865 |         37 |        28 | 0.756757 |
+| svd3              | (67, 67)   | (67, 67)   |  0.0120842 |        134 |       134 |        1 |
 
 ** Runtime
 #+begin_src python :results value raw
@@ -94,6 +180,20 @@
   pd2org(pac)
 #+end_src
 
+#+RESULTS:
+|                   |    mean |        std |     min |     max |        rstd |        rmax |        rmin |
+|-------------------+---------+------------+---------+---------+-------------+-------------+-------------|
+| liblinear         | 25.5024 |  0.0661829 | 25.4327 | 25.5988 |  0.00259516 |  0.00377779 |  0.00273656 |
+| kmeans            | 33.6197 |  0.0282234 | 33.5932 | 33.6603 | 0.000839489 |  0.00120502 | 0.000789197 |
+| spectral          | 6.95625 | 0.00981311 | 6.94492 | 6.97233 |  0.00141069 |  0.00231148 |  0.00162934 |
+| lda               |   101.4 |  0.0408789 | 101.358 | 101.476 | 0.000403144 | 0.000746375 | 0.000421125 |
+| motion-estimation | 9.73107 | 0.00153315 | 9.72838 | 9.73272 | 0.000157552 | 0.000169834 | 0.000276421 |
+| pca               |  3.3097 |  0.0111344 | 3.29194 | 3.32145 |  0.00336417 |  0.00354988 |   0.0053652 |
+| rbm               | 22.9873 |   0.068238 | 22.9008 | 23.0863 |  0.00296851 |  0.00430702 |   0.0037628 |
+| sphinx            | 30.8157 |  0.0249828 | 30.7827 | 30.8393 | 0.000810717 | 0.000766584 |  0.00106961 |
+| srr               | 31.7298 |  0.0208484 |  31.697 | 31.7553 | 0.000657061 | 0.000801853 |  0.00103398 |
+| svd3              | 14.7736 |    0.29196 | 14.5788 | 15.3547 |   0.0197622 |   0.0393304 |   0.0131894 |
+
 * Overhead
 ** Load baseline
 
@@ -102,11 +202,13 @@
       'suite': query['suite'],
       'host': query['host'],
       'scope': 'nil',
-      #'cflags': '',
+      'cflags': '-O2',
       'ld_preload': ''
   }
+  #query_nil = query
+  #query_nil['cflags'] = ''
 
-  exp_nil = search_experiment(bench.Bench, "../data", query_nil)
+  exp_nil = search_experiment(bench.Bench, datapath+"../cortex-zynqmp", query_nil)
   print(exp_nil)
 
   nopac_raw_orig = dict(np.load(exp_nil.o.pac.path))
@@ -126,6 +228,20 @@
   pd2org(nopac)  
 #+end_src
 
+#+RESULTS:
+|                   |    mean |         std |     min |     max |        rstd |        rmax |        rmin |
+|-------------------+---------+-------------+---------+---------+-------------+-------------+-------------|
+| liblinear         | 25.6131 |   0.0375865 | 25.5591 | 25.6553 |  0.00146747 |  0.00164849 |  0.00210934 |
+| kmeans            | 34.0794 |   0.0281641 | 34.0321 | 34.1094 | 0.000826426 | 0.000881234 |  0.00138806 |
+| spectral          | 7.05522 |   0.0158374 | 7.03317 | 7.07749 |  0.00224477 |  0.00315615 |  0.00312657 |
+| lda               | 16.3691 |     1.58906 |  13.463 | 17.9913 |   0.0970769 |   0.0991019 |    0.177533 |
+| motion-estimation | 9.69697 | 0.000959539 | 9.69518 | 9.69785 | 9.89524e-05 |  9.0044e-05 | 0.000184484 |
+| pca               | 3.37699 |   0.0055983 | 3.36868 | 3.38353 |  0.00165778 |  0.00193714 |  0.00246086 |
+| rbm               | 21.0171 |   0.0212607 | 20.9749 | 21.0319 |  0.00101159 | 0.000706267 |  0.00200698 |
+| sphinx            | 12.4819 |  0.00426947 | 12.4769 | 12.4883 | 0.000342053 | 0.000516141 | 0.000398179 |
+| srr               | 29.3809 |   0.0437096 | 29.3158 | 29.4373 |  0.00148769 |  0.00192147 |  0.00221347 |
+| svd3              | 14.5229 |   0.0155707 |  14.498 | 14.5445 |  0.00107214 |  0.00148152 |  0.00171931 |
+
 ** Evaluate
 
 #+begin_src python :results value raw
@@ -133,11 +249,28 @@
   freq = int(exp.o.scaling_cur_freq.value)*1e3
 
   oh = pd.DataFrame()
-  oh["overhead"] = slowdown / nopac["mean"] * 100
+  oh['duration'] = pac['mean']
+  oh["overhead"] = pac['mean'] / nopac["mean"]
   oh["aut_s"] = 1/pac["mean"] * build["auths"]
-  oh["cycles"] = slowdown/build["auths"] * freq
+  oh["cycles"] = slowdown/build["auths"] * freq / 2
+  oh["loci"] = libkpac['total_loci']
+  oh["success"] = libkpac['ratio']
 
   oh = oh.sort_values("overhead", ascending = False)
 
   pd2org(oh)
 #+end_src
+
+#+RESULTS:
+|                   | duration | overhead |     aut_s |       cycles | loci |  success |
+|-------------------+----------+----------+-----------+--------------+------+----------|
+| lda               |    101.4 |  6.19462 |    565906 |      889.089 |   53 | 0.981132 |
+| sphinx            |  30.8157 |  2.46883 |    830991 |      429.571 | 1366 | 0.975842 |
+| rbm               |  22.9873 |  1.09374 |    139400 |      368.908 |   26 | 0.692308 |
+| srr               |  31.7298 |  1.07995 |   27675.5 |      1604.94 |   37 | 0.756757 |
+| svd3              |  14.7736 |  1.01726 |   23877.2 |      426.423 |  134 |        1 |
+| motion-estimation |  9.73107 |  1.00352 |     18764 |      112.027 |   20 |      0.9 |
+| liblinear         |  25.5024 | 0.995681 |   490.933 |     -5301.94 |  117 | 0.923077 |
+| kmeans            |  33.6197 | 0.986513 | 0.0892333 | -9.19276e+07 |    8 |     0.75 |
+| spectral          |  6.95625 | 0.985971 |   1.15004 | -7.42312e+06 |   18 | 0.888889 |
+| pca               |   3.3097 | 0.980075 |    3.6257 | -3.36439e+06 |   17 |        1 |
