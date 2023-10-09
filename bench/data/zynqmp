@@ -21,14 +21,14 @@ env CFLAGS="-O2 -mbranch-protection=pac-ret"		\
     ../bench.py --suite "$suite"
 
 # pac-pl
-for scope in strong all; do
+for scope in char strong all; do
     env CFLAGS="-O2"					\
         LD_PRELOAD="$HOME/pac-sw/pac-pl/pac-pl.so"	\
         ../bench.py --suite "$suite" --variant pac-pl --scope "$scope"
 done
 
 # syscall
-for scope in strong all; do
+for scope in char strong all; do
     env CFLAGS="-O2"					\
         ../bench.py --suite "$suite" --variant syscall --scope "$scope"
 done
@@ -37,7 +37,7 @@ done
 echo 2 > /sys/kernel/debug/kpacd/3/cpumask
 
 # kpacd
-for scope in strong all; do
+for scope in char strong all; do
     env CFLAGS="-O2"					\
         ../bench.py --suite "$suite" --variant kpacd --scope "$scope"
 done
