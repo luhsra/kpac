@@ -70,12 +70,14 @@ class Benchmark:
         self.run_cmd = bench.get("run_cmd", j["run_cmd"])
         self.build_cmd = bench.get("build_cmd", j["build_cmd"])
 
-    def build(self):
-        sp.check_call(["/bin/sh", "-xc", self.build_cmd], cwd=self.path)
+    def build(self, build_log_path):
+        print(f"Compiling {self.name}...")
+        with open(build_log_path, 'w') as logfile:
+            sp.check_call(["/bin/sh", "-c", self.build_cmd], cwd=self.path, stdout=logfile, stderr=logfile)
 
     # Measure average run duration of the benchmark and amount of
     # authentications
-    def meas(self):
+    def meas(self, run_log_path):
         nr_pac_0 = get_attr(KPACD_NR_PAC)
         nr_aut_0 = get_attr(KPACD_NR_AUT)
         durs = np.zeros(self.samples)
@@ -96,7 +98,7 @@ class Benchmark:
 
                 sys.stdout.write(f"\r{self.name}: {i+1}/{self.samples:<12d}\r")
                 sys.stdout.flush()
-                dur = timing.run(["/bin/sh", "-c", self.run_cmd + ' > /dev/null'])
+                dur = timing.run(["/bin/sh", "-c", self.run_cmd + ' > ' + run_log_path + ' 2>&1'])
                 if i >= 0:
                     durs[i] = dur
 
@@ -120,7 +122,7 @@ class Suite:
 
     # Build the benchmarks with specified plugin arguments, compile
     # instrumentation statistics
-    def build_pac(self, cflags, args):
+    def build_pac(self, cflags, args, build_log_path):
         stat = {}
 
         tmp = tempfile.NamedTemporaryFile(mode="r+")
@@ -133,7 +135,7 @@ class Suite:
             stat[b.name] = [0, 0]
             tmp.truncate(0)
 
-            b.build()
+            b.build(os.path.join(build_log_path, b.name + ".log"))
 
             # Compile stats of this benchmark
             tmp.seek(0)
@@ -144,13 +146,13 @@ class Suite:
         tmp.close()
         return stat
 
-    def meas(self, libkpac_stat_dir):
+    def meas(self, libkpac_stat_dir, run_log_path):
         results = {}
         auths = {}
         for b in self.benchmarks:
             os.environ["LIBKPAC_STAT"] = os.path.join(libkpac_stat_dir, b.name + ".csv");
 
-            results[b.name], auths[b.name] = b.meas()
+            results[b.name], auths[b.name] = b.meas(os.path.join(run_log_path, b.name + ".log"))
 
         return results, auths
 
@@ -197,6 +199,8 @@ class Bench(Experiment):
         "scaling_cur_freq": File("scaling_cur_freq"),
         "pac":              File("pac.npz"),
         "libkpac_stat":     Directory("libkpac_stat"),
+        "build_log":        Directory("build_log"),
+        "run_log":          Directory("run_log"),
         "build":            CSV_File("build.csv"), # Build facts
     }
 
@@ -218,8 +222,8 @@ class Bench(Experiment):
         if self.i.scope.value:
             args["scope"] = self.i.scope.value
 
-        inst = suite.build_pac(self.i.cflags.value, args)
-        durs, auths = suite.meas(self.o.libkpac_stat.path)
+        inst = suite.build_pac(self.i.cflags.value, args, self.o.build_log.path)
+        durs, auths = suite.meas(self.o.libkpac_stat.path, self.o.run_log.path)
         np.savez_compressed(self.o.pac.path, **durs)
 
         self.o.build.append(["name", "inst", "total", "auths"])

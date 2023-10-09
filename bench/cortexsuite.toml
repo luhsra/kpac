@@ -1,5 +1,5 @@
 warmup = 0
-samples = 5
+samples = 10
 
 build_cmd = "make clean && make compile \"CFLAGS=$CFLAGS\""
 run_cmd = "false"
