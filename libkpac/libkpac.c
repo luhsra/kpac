@@ -51,6 +51,12 @@ struct patch_stat {
     long patched_pac, patched_aut;
 };
 
+static struct patch_stat total_stat = { 0 };
+
+static char *run_id = "";
+static pid_t pid;
+static char exe_path[1024] = { 0 };
+
 static inline void timespec_diff(struct timespec *a, struct timespec *b,
                                  struct timespec *result)
 {
@@ -255,7 +261,7 @@ static int phdr_callback(struct dl_phdr_info *info, size_t _size, void *_data)
     struct timespec tp0, tp1, diff;
     clock_gettime(CLOCK_MONOTONIC_RAW, &tp0);
 
-    const char *filename = program_invocation_name;
+    const char *filename = exe_path;
     if (info->dlpi_name[0] != '\0')
         filename = info->dlpi_name;
 
@@ -299,11 +305,16 @@ static int phdr_callback(struct dl_phdr_info *info, size_t _size, void *_data)
     timespec_diff(&tp1, &tp0, &diff);
 
     if (stat_file)
-        fprintf(stat_file, "%s,%s,%lld.%09lld,%ld,%ld,%ld,%ld\n",
-                program_invocation_name, filename,
+        fprintf(stat_file, "%d,%s,%s,%lld.%09lld,%ld,%ld,%ld,%ld\n",
+                pid, run_id, filename,
                 (long long) diff.tv_sec, (long long) diff.tv_nsec,
                 stat.total_pac, stat.patched_pac,
                 stat.total_aut, stat.patched_aut);
+
+    total_stat.total_pac += stat.total_pac;
+    total_stat.total_aut += stat.total_aut;
+    total_stat.patched_pac += stat.patched_pac;
+    total_stat.patched_aut += stat.patched_aut;
 
     return 0;
 }
@@ -311,6 +322,17 @@ static int phdr_callback(struct dl_phdr_info *info, size_t _size, void *_data)
 __attribute__ ((constructor))
 void libkpac_init()
 {
+    struct timespec tp0, tp1, diff;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &tp0);
+
+    pid = getpid();
+    if (readlink("/proc/self/exe", exe_path, sizeof(exe_path)) == -1)
+        die("readlink: %s", strerror(errno));
+
+    char *id_env = getenv("LIBKPAC_ID");
+    if (id_env)
+        run_id = id_env;
+
     char *stat_env = getenv("LIBKPAC_STAT");
     if (stat_env) {
         stat_file = fopen(stat_env, "a");
@@ -324,4 +346,16 @@ void libkpac_init()
 
     if (dl_iterate_phdr(phdr_callback, NULL))
         die("dl_iterate_phdr");
+
+    clock_gettime(CLOCK_MONOTONIC_RAW, &tp1);
+    timespec_diff(&tp1, &tp0, &diff);
+
+    if (stat_file) {
+        fprintf(stat_file, "%d,%s,TOTAL,%lld.%09lld,%ld,%ld,%ld,%ld\n",
+                pid, run_id,
+                (long long) diff.tv_sec, (long long) diff.tv_nsec,
+                total_stat.total_pac, total_stat.patched_pac,
+                total_stat.total_aut, total_stat.patched_aut);
+    }
+
 }
