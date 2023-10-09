@@ -17,7 +17,7 @@ from platform import uname
 
 from versuchung.experiment import Experiment
 from versuchung.types import String
-from versuchung.files import File, CSV_File
+from versuchung.files import File, CSV_File, Directory
 
 CUR_CPUFREQ  = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
 KPACD_DIR    = "/sys/kernel/debug/kpacd"
@@ -80,11 +80,23 @@ class Benchmark:
         nr_aut_0 = get_attr(KPACD_NR_AUT)
         durs = np.zeros(self.samples)
 
+        libkpac_stat = os.environ["LIBKPAC_STAT"]
+        del os.environ["LIBKPAC_STAT"]
+
         with working_directory(self.path):
             for i in range(-self.warmup, self.samples):
+                if i == 0:
+                    with contextlib.suppress(FileNotFoundError):
+                        os.remove(libkpac_stat)
+
+                    os.environ["LIBKPAC_STAT"] = libkpac_stat
+
+                if i >= 0:
+                    os.environ["LIBKPAC_ID"] = str(i)
+
                 sys.stdout.write(f"\r{self.name}: {i+1}/{self.samples:<12d}\r")
                 sys.stdout.flush()
-                dur = timing.run(["/bin/sh", "-c", self.run_cmd])
+                dur = timing.run(["/bin/sh", "-c", self.run_cmd + ' > /dev/null'])
                 if i >= 0:
                     durs[i] = dur
 
@@ -132,10 +144,12 @@ class Suite:
         tmp.close()
         return stat
 
-    def meas(self):
+    def meas(self, libkpac_stat_dir):
         results = {}
         auths = {}
         for b in self.benchmarks:
+            os.environ["LIBKPAC_STAT"] = os.path.join(libkpac_stat_dir, b.name + ".csv");
+
             results[b.name], auths[b.name] = b.meas()
 
         return results, auths
@@ -182,6 +196,7 @@ class Bench(Experiment):
     outputs = {
         "scaling_cur_freq": File("scaling_cur_freq"),
         "pac":              File("pac.npz"),
+        "libkpac_stat":     Directory("libkpac_stat"),
         "build":            CSV_File("build.csv"), # Build facts
     }
 
@@ -204,7 +219,7 @@ class Bench(Experiment):
             args["scope"] = self.i.scope.value
 
         inst = suite.build_pac(self.i.cflags.value, args)
-        durs, auths = suite.meas()
+        durs, auths = suite.meas(self.o.libkpac_stat.path)
         np.savez_compressed(self.o.pac.path, **durs)
 
         self.o.build.append(["name", "inst", "total", "auths"])
