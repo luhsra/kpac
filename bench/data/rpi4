@@ -22,7 +22,7 @@ echo 2 | sudo sh -c 'tee /sys/kernel/debug/kpacd/3/cpumask'
 # svc virtualization
 env CFLAGS="-mbranch-protection=pac-ret"		\
     LD_PRELOAD="$PAC_SW/libkpac/libkpac.so"		\
-    LIBKPAC_SVC=1					\
+    LIBKPAC_MODE=svc-only				\
     ../bench.py --suite "$suite"
 
 # syscall
@@ -38,6 +38,6 @@ done
 
 # paravirtualization
 env CFLAGS="-mbranch-protection=pac-ret"		\
-    LD_PRELOAD="$PAC_SW/libkpac/libkpac.so"	\
-    LIBKPAC_SVC=0					\
+    LD_PRELOAD="$PAC_SW/libkpac/libkpac.so"		\
+    LIBKPAC_MODE=kpacd-svc				\
     ../bench.py --suite "$suite"
