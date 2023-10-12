@@ -15,6 +15,9 @@
 
 #define ALIGN_MASK(x, mask)	(((x) + (mask)) & ~(mask))
 #define ALIGN_UP(x, a)		ALIGN_MASK(x, (__typeof__(x))(a) - 1)
+#define ALIGN_DOWN(x, a)	ALIGN_UP((x) - ((a) - 1), (a))
+
+#define MIBI			(1024*1024)
 
 #ifdef DEBUG
 #define log(fmt, ...) fprintf(stderr, "libkpac: " fmt "\n", ##__VA_ARGS__)
@@ -57,6 +60,8 @@ static char *run_id = "";
 static pid_t pid;
 static char exe_path[1024] = { 0 };
 
+static long page_size = 0;
+
 static inline void timespec_diff(struct timespec *a, struct timespec *b,
                                  struct timespec *result)
 {
@@ -74,6 +79,12 @@ static bool patch_paciasp(inst_t *text, size_t len, size_t i, struct pac_procs *
 
     if (svc_mode || i + 1 >= len)
         goto fallback;
+
+    if ((uintptr_t) procs->pac_0 > (uintptr_t) text+128*MIBI ||
+        (uintptr_t) procs->pac_8 < (uintptr_t) text-128*MIBI) {
+        log("%p: cannot bl, out of range");
+        goto fallback;
+    }
 
     /* paciasp
      * stp x29, x30, [sp, #-N]! */
@@ -135,6 +146,12 @@ static bool patch_autiasp(inst_t *text, size_t len, size_t i, struct pac_procs *
     if (svc_mode || i < 1)
         goto fallback;
 
+    if ((uintptr_t) procs->aut_0 > (uintptr_t) text+128*MIBI ||
+        (uintptr_t) procs->aut_8 < (uintptr_t) text-128*MIBI) {
+        log("%p: cannot bl, out of range");
+        goto fallback;
+    }
+
     /* ldp x29, x30, [sp], #N
      * autiasp */
     if (ldp_post(text[i-1], &rn, &rt1, &rt2) &&
@@ -188,28 +205,28 @@ fallback:
     return false;
 }
 
-static int phdr_patch(inst_t *text, size_t len, struct pac_procs *procs,
+static int phdr_patch(char *filename, inst_t *text, size_t len, struct pac_procs *procs,
                       struct patch_stat *stat)
 {
     for (size_t i = 0; i < len; i++) {
         switch (text[i]) {
         case INST_PACIASP:
-            log("%p found pac", &text[i]);
+            log("%s: %p found pac", filename, &text[i]);
             stat->total_pac++;
 
             if (patch_paciasp(text, len, i, procs)) {
                 stat->patched_pac++;
-                log("%p patched pac", &text[i]);
+                log("%s: %p patched pac", filename, &text[i]);
             }
 
             break;
         case INST_AUTIASP:
-            log("%p found aut", &text[i]);
+            log("%s: %p found aut", filename, &text[i]);
             stat->total_aut++;
 
             if (patch_autiasp(text, len, i, procs)) {
                 stat->patched_aut++;
-                log("%p patched aut", &text[i]);
+                log("%s: %p patched aut", filename, &text[i]);
             }
 
             break;
@@ -221,10 +238,6 @@ static int phdr_patch(inst_t *text, size_t len, struct pac_procs *procs,
 
 static void allocate_procs(uintptr_t vaddr_end, struct pac_procs *procs)
 {
-    static long page_size = 0;
-    if (!page_size)
-        page_size = sysconf(_SC_PAGESIZE);
-
     uintptr_t procs_start = (uintptr_t) &__start_text_kpac;
     uintptr_t procs_stop  = (uintptr_t) &__stop_text_kpac;
 
@@ -234,7 +247,7 @@ static void allocate_procs(uintptr_t vaddr_end, struct pac_procs *procs)
 
     /* Allocate a page for pac/aut routines within +-128 MiB of the segment.
      * They must be callable using BL instruction. */
-    uintptr_t min = vaddr_end - 128 * 1024 * 1024;
+    uintptr_t min = vaddr_end - 128 * MIBI;
     void *addr = mmap((void *) min, procs_len,
                       PROT_READ | PROT_WRITE,
                       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
@@ -261,9 +274,13 @@ static int phdr_callback(struct dl_phdr_info *info, size_t _size, void *_data)
     struct timespec tp0, tp1, diff;
     clock_gettime(CLOCK_MONOTONIC_RAW, &tp0);
 
+    page_size = sysconf(_SC_PAGESIZE);
+
     const char *filename = exe_path;
-    if (info->dlpi_name[0] != '\0')
+    if (info->dlpi_name[0] != '\0') {
         filename = info->dlpi_name;
+        return 0;
+    }
 
     if (!strcmp(filename, "linux-vdso.so.1") ||
         !strcmp(filename, "libkpac.so")) {
@@ -290,12 +307,12 @@ static int phdr_callback(struct dl_phdr_info *info, size_t _size, void *_data)
         log("[%d:%s] patching segment %p-%p", cnt, filename, vaddr_start, vaddr_end);
 
         /* Need PROT_EXEC here to be able to execute mprotect in libc later */
-        if (mprotect(vaddr_start, size, PROT_READ | PROT_EXEC | PROT_WRITE))
+        if (mprotect((void *)ALIGN_DOWN((uintptr_t) vaddr_start, page_size), size, PROT_READ | PROT_EXEC | PROT_WRITE))
             die("mprotect: %s", strerror(errno));
 
-        phdr_patch(vaddr_start, vaddr_end-vaddr_start, &procs, &stat);
+        phdr_patch(filename, vaddr_start, vaddr_end-vaddr_start, &procs, &stat);
 
-        if (mprotect(vaddr_start, size, PROT_READ | PROT_EXEC))
+        if (mprotect((void *)ALIGN_DOWN((uintptr_t) vaddr_start,page_size), size, PROT_READ | PROT_EXEC))
             die("mprotect: %s", strerror(errno));
     }
 
