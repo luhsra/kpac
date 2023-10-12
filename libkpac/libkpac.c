@@ -1,6 +1,5 @@
 #define _GNU_SOURCE
 #include <stdio.h>
-#include <link.h>
 #include <string.h>
 #include <inttypes.h>
 #include <stdlib.h>
@@ -10,14 +9,10 @@
 #include <stddef.h>
 #include <unistd.h>
 #include <time.h>
+#include <assert.h>
 
 #include "asm.h"
-
-#define ALIGN_MASK(x, mask)	(((x) + (mask)) & ~(mask))
-#define ALIGN_UP(x, a)		ALIGN_MASK(x, (__typeof__(x))(a) - 1)
-#define ALIGN_DOWN(x, a)	ALIGN_UP((x) - ((a) - 1), (a))
-
-#define MIBI			(1024*1024)
+#include "proc.h"
 
 #ifdef DEBUG
 #define log(fmt, ...) fprintf(stderr, "libkpac: " fmt "\n", ##__VA_ARGS__)
@@ -32,12 +27,36 @@
         exit(EXIT_FAILURE);                                             \
     } while (0)
 
-struct pac_procs {
-    void *pac_0, *pac_8;
-    void *aut_0, *aut_8;
+#define ALIGN_MASK(x, mask)	(((x) + (mask)) & ~(mask))
+#define ALIGN_UP(x, a)		ALIGN_MASK(x, (__typeof__(x))(a) - 1)
+#define ALIGN_DOWN(x, a)	ALIGN_UP((x) - ((a) - 1), (a))
+
+#define IN_RANGE(value,low,high) ((value >= low) && (value <= high))
+
+#define MIBI			(1024*1024)
+#define NR_VMAS			512
+
+enum {
+    MODE_KPACD_SVC,
+    MODE_SVC_ONLY,
+    MODE_KPACD_ONLY,
 };
 
-extern char *program_invocation_name;
+struct kpac_routine {
+    void *pac_0, *pac_8;
+    void *aut_0, *aut_8;
+
+    struct kpac_routine *prev; /* last allocated */
+};
+
+struct kpac_stat {
+    struct {
+        long total, patched;
+    } pac;
+    struct {
+        long total, patched;
+    } aut;
+};
 
 extern char __start_text_kpac;
 extern void kpac_pac_8(void);
@@ -46,21 +65,23 @@ extern void kpac_aut_8(void);
 extern void kpac_aut_0(void);
 extern char __stop_text_kpac;
 
-static bool svc_mode = false;
-static FILE *stat_file = NULL;
-
-struct patch_stat {
-    long total_pac, total_aut;
-    long patched_pac, patched_aut;
+static struct kpac_routine routine_own = {
+    .pac_8 = kpac_pac_8,
+    .pac_0 = kpac_pac_0,
+    .aut_8 = kpac_aut_8,
+    .aut_0 = kpac_aut_0,
+    .prev = NULL, /* Dynamically allocated routines start here */
 };
 
-static struct patch_stat total_stat = { 0 };
-
-static char *run_id = "";
+/* Globals */
 static pid_t pid;
-static char exe_path[1024] = { 0 };
+static char exepath[1024];
+static long page_size;
 
-static long page_size = 0;
+static unsigned mode = MODE_KPACD_SVC;
+
+static struct proc_vma vmas[NR_VMAS];
+static size_t nr_vmas = 0;
 
 static inline void timespec_diff(struct timespec *a, struct timespec *b,
                                  struct timespec *result)
@@ -73,18 +94,106 @@ static inline void timespec_diff(struct timespec *a, struct timespec *b,
     }
 }
 
-static bool patch_paciasp(inst_t *text, size_t len, size_t i, struct pac_procs *procs)
+intptr_t vma_find_hole(uintptr_t current, uintptr_t min, uintptr_t max)
+{
+    size_t vma_cur;
+    uintptr_t hole;
+
+    /* Find the nearest hole below the current VMA */
+    size_t vma_hole_below = 0;
+    for (vma_cur = 0; vma_cur < nr_vmas; vma_cur++) {
+        if (vma_cur > 0 && vmas[vma_cur].vm_start > vmas[vma_cur-1].vm_end)
+            vma_hole_below = vma_cur;
+
+        if (IN_RANGE(current, vmas[vma_cur].vm_start, vmas[vma_cur].vm_end)) {
+            /* This is current VMA. */
+            break;
+        }
+    }
+
+    assert(vma_cur < nr_vmas);
+
+    hole = vmas[vma_hole_below].vm_start - page_size;
+    if (IN_RANGE(hole, min, max))
+        return hole;
+
+    /* Hole below is not suitable, look above */
+    size_t vma_hole_above = vma_cur;
+    while (vma_hole_above + 1 < nr_vmas &&
+           vmas[vma_hole_above].vm_end == vmas[vma_hole_above+1].vm_start)
+        vma_hole_above++;
+
+    hole = vmas[vma_hole_above].vm_end;
+    if (IN_RANGE(hole, min, max))
+        return hole;
+
+    return -1;
+}
+
+static struct kpac_routine *allocate_routine(void *hole)
+{
+    size_t len = &__stop_text_kpac - &__start_text_kpac;
+
+    hole = mmap(hole, len + sizeof(struct kpac_routine),
+                PROT_READ | PROT_WRITE | PROT_EXEC,
+                MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
+
+    if (hole == MAP_FAILED)
+        die("mmap: %s", strerror(errno));
+
+    memcpy(hole, &__start_text_kpac, len);
+
+    /* Fill metadata */
+    struct kpac_routine *rout = (void *) ((uintptr_t) hole + len);
+    rout->pac_0 = hole + ((char *) kpac_pac_0 - &__start_text_kpac);
+    rout->pac_8 = hole + ((char *) kpac_pac_8 - &__start_text_kpac);
+    rout->aut_0 = hole + ((char *) kpac_aut_0 - &__start_text_kpac);
+    rout->aut_8 = hole + ((char *) kpac_aut_8 - &__start_text_kpac);
+
+    return rout;
+}
+
+struct kpac_routine *find_routine(void *branch)
+{
+    size_t kpac_len = &__stop_text_kpac - &__start_text_kpac;
+    size_t padding = ALIGN_UP(kpac_len + sizeof(struct kpac_routine),
+                              page_size);
+
+    size_t    range     = 128 * MIBI;
+    uintptr_t range_min = (uintptr_t) branch - range + padding;
+    uintptr_t range_max = (uintptr_t) branch + range - padding;
+
+    /* The last one allocated is a likely candidate */
+    struct kpac_routine *needle = NULL;
+    for (needle = &routine_own; needle != NULL; needle = needle->prev) {
+        uintptr_t addr = (uintptr_t) needle->pac_0;
+        if (IN_RANGE(addr, range_min, range_max))
+            return needle;
+    }
+
+    /* Find a suitable hole in the address space */
+    intptr_t hole = vma_find_hole((uintptr_t) branch, range_min, range_max);
+    if (hole == -1)
+        return NULL;
+
+    /* Allocate and copy text into it */
+    struct kpac_routine *routine = allocate_routine((void *) hole);
+    log("allocated routine at %p", routine);
+
+    routine->prev = routine_own.prev;
+    routine_own.prev = routine;
+
+    return routine;
+}
+
+static bool patch_paciasp(inst_t *text, size_t len, size_t i)
 {
     int rn, rd, rt1, rt2, off;
 
-    if (svc_mode || i + 1 >= len)
+    if (mode == MODE_SVC_ONLY || i + 1 >= len)
         goto fallback;
 
-    if ((uintptr_t) procs->pac_0 > (uintptr_t) text+128*MIBI ||
-        (uintptr_t) procs->pac_8 < (uintptr_t) text-128*MIBI) {
-        log("%p: cannot bl, out of range");
-        goto fallback;
-    }
+    struct kpac_routine *routine = find_routine(&text[i]);
 
     /* paciasp
      * stp x29, x30, [sp, #-N]! */
@@ -92,7 +201,7 @@ static bool patch_paciasp(inst_t *text, size_t len, size_t i, struct pac_procs *
         rn == REG_SP && (rt1 == REG_LR || rt2 == REG_LR)) {
 
         text[i] = text[i+1];
-        emit_bl(&text[i+1], rt1 == REG_LR ? procs->pac_0 : procs->pac_8);
+        emit_bl(&text[i+1], rt1 == REG_LR ? routine->pac_0 : routine->pac_8);
         return true;
     }
 
@@ -102,7 +211,7 @@ static bool patch_paciasp(inst_t *text, size_t len, size_t i, struct pac_procs *
         rn == REG_SP && rt1 == REG_LR) {
 
         text[i] = text[i+1];
-        emit_bl(&text[i+1], procs->pac_0);
+        emit_bl(&text[i+1], routine->pac_0);
         return true;
     }
 
@@ -119,7 +228,7 @@ static bool patch_paciasp(inst_t *text, size_t len, size_t i, struct pac_procs *
 
             text[i] = text[i+1];
             text[i+1] = text[i+2];
-            emit_bl(&text[i+2], rt1 == REG_LR ? procs->pac_0 : procs->pac_8);
+            emit_bl(&text[i+2], rt1 == REG_LR ? routine->pac_0 : routine->pac_8);
             return true;
         }
 
@@ -129,28 +238,26 @@ static bool patch_paciasp(inst_t *text, size_t len, size_t i, struct pac_procs *
 
             text[i] = text[i+1];
             text[i+1] = text[i+2];
-            emit_bl(&text[i+2], procs->pac_0);
+            emit_bl(&text[i+2], routine->pac_0);
             return true;
         }
     }
 
 fallback:
-    text[i] = INST_SVC_PAC;
+    if (mode != MODE_KPACD_ONLY)
+        text[i] = INST_SVC_PAC;
+
     return false;
 }
 
-static bool patch_autiasp(inst_t *text, size_t len, size_t i, struct pac_procs *procs)
+static bool patch_autiasp(inst_t *text, size_t len, size_t i)
 {
     int rn, rd, rt1, rt2, off;
 
-    if (svc_mode || i < 1)
+    if (mode == MODE_SVC_ONLY || i < 1)
         goto fallback;
 
-    if ((uintptr_t) procs->aut_0 > (uintptr_t) text+128*MIBI ||
-        (uintptr_t) procs->aut_8 < (uintptr_t) text-128*MIBI) {
-        log("%p: cannot bl, out of range");
-        goto fallback;
-    }
+    struct kpac_routine *routine = find_routine(&text[i]);
 
     /* ldp x29, x30, [sp], #N
      * autiasp */
@@ -158,7 +265,7 @@ static bool patch_autiasp(inst_t *text, size_t len, size_t i, struct pac_procs *
         rn == REG_SP && (rt1 == REG_LR || rt2 == REG_LR)) {
 
         text[i] = text[i-1];
-        emit_bl(&text[i-1], rt1 == REG_LR ? procs->aut_0 : procs->aut_8);
+        emit_bl(&text[i-1], rt1 == REG_LR ? routine->aut_0 : routine->aut_8);
         return true;
     }
 
@@ -168,7 +275,7 @@ static bool patch_autiasp(inst_t *text, size_t len, size_t i, struct pac_procs *
         rn == REG_SP && rt1 == REG_LR) {
 
         text[i] = text[i-1];
-        emit_bl(&text[i-1], procs->aut_0);
+        emit_bl(&text[i-1], routine->aut_0);
         return true;
     }
 
@@ -185,7 +292,7 @@ static bool patch_autiasp(inst_t *text, size_t len, size_t i, struct pac_procs *
 
             text[i] = text[i-1];
             text[i-1] = text[i-2];
-            emit_bl(&text[i-2], rt1 == REG_LR ? procs->aut_0 : procs->aut_8);
+            emit_bl(&text[i-2], rt1 == REG_LR ? routine->aut_0 : routine->aut_8);
             return true;
         }
 
@@ -195,161 +302,57 @@ static bool patch_autiasp(inst_t *text, size_t len, size_t i, struct pac_procs *
 
             text[i] = text[i-1];
             text[i-1] = text[i-2];
-            emit_bl(&text[i-2], procs->aut_0);
+            emit_bl(&text[i-2], routine->aut_0);
             return true;
         }
     }
 
 fallback:
-    text[i] = INST_SVC_AUT;
+    if (mode != MODE_KPACD_ONLY)
+        text[i] = INST_SVC_AUT;
+
     return false;
 }
 
-static int phdr_patch(char *filename, inst_t *text, size_t len, struct pac_procs *procs,
-                      struct patch_stat *stat)
+static void vma_patch(struct proc_vma *vma, struct kpac_stat *stat)
 {
+    char *filename = vma->pathname;
+    inst_t *text = (inst_t *) vma->vm_start;
+    size_t len = (vma->vm_end - vma->vm_start) / sizeof(inst_t);
+
     for (size_t i = 0; i < len; i++) {
         switch (text[i]) {
         case INST_PACIASP:
-            log("%s: %p found pac", filename, &text[i]);
-            stat->total_pac++;
+            // log("%s: %p found pac", filename, &text[i]);
+            stat->pac.total++;
 
-            if (patch_paciasp(text, len, i, procs)) {
-                stat->patched_pac++;
-                log("%s: %p patched pac", filename, &text[i]);
+            if (patch_paciasp(text, len, i)) {
+                stat->pac.patched++;
+                // log("%s: %p patched pac", filename, &text[i]);
             }
 
             break;
         case INST_AUTIASP:
-            log("%s: %p found aut", filename, &text[i]);
-            stat->total_aut++;
+            // log("%s: %p found aut", filename, &text[i]);
+            stat->aut.total++;
 
-            if (patch_autiasp(text, len, i, procs)) {
-                stat->patched_aut++;
-                log("%s: %p patched aut", filename, &text[i]);
+            if (patch_autiasp(text, len, i)) {
+                stat->aut.patched++;
+                // log("%s: %p patched aut", filename, &text[i]);
             }
 
             break;
         }
     }
-
-    return 0;
-}
-
-static void allocate_procs(uintptr_t vaddr_end, struct pac_procs *procs)
-{
-    uintptr_t procs_start = (uintptr_t) &__start_text_kpac;
-    uintptr_t procs_stop  = (uintptr_t) &__stop_text_kpac;
-
-    size_t procs_len = procs_stop - procs_start;
-
-    vaddr_end = ALIGN_UP(vaddr_end, page_size);
-
-    /* Allocate a page for pac/aut routines within +-128 MiB of the segment.
-     * They must be callable using BL instruction. */
-    uintptr_t min = vaddr_end - 128 * MIBI;
-    void *addr = mmap((void *) min, procs_len,
-                      PROT_READ | PROT_WRITE,
-                      MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if (addr == MAP_FAILED)
-        die("mmap: %s", strerror(errno));
-
-    memcpy(addr, (void *) procs_start, procs_len);
-
-    int ret = mprotect(addr, procs_len, PROT_READ | PROT_EXEC);
-    if (ret)
-        die("mprotect: %s", strerror(errno));
-
-    procs->pac_0 = addr + ((uintptr_t) kpac_pac_0 - procs_start);
-    procs->pac_8 = addr + ((uintptr_t) kpac_pac_8 - procs_start);
-    procs->aut_0 = addr + ((uintptr_t) kpac_aut_0 - procs_start);
-    procs->aut_8 = addr + ((uintptr_t) kpac_aut_8 - procs_start);
-}
-
-static int phdr_callback(struct dl_phdr_info *info, size_t _size, void *_data)
-{
-    static int cnt = 0;
-    struct patch_stat stat = { 0 };
-
-    struct timespec tp0, tp1, diff;
-    clock_gettime(CLOCK_MONOTONIC_RAW, &tp0);
-
-    page_size = sysconf(_SC_PAGESIZE);
-
-    const char *filename = exe_path;
-    if (info->dlpi_name[0] != '\0') {
-        filename = info->dlpi_name;
-        return 0;
-    }
-
-    if (!strcmp(filename, "linux-vdso.so.1") ||
-        !strcmp(filename, "libkpac.so")) {
-        log("[%d:%s] skipping", cnt, filename);
-        return 0;
-    }
-
-    for (size_t i = 0; i < info->dlpi_phnum; i++) {
-        const ElfW(Phdr) *phdr = &info->dlpi_phdr[i];
-
-        if (phdr->p_type != PT_LOAD)
-            continue;
-        if (!(phdr->p_flags & PF_X))
-            continue;
-
-        inst_t *vaddr_start = (inst_t *) (info->dlpi_addr + phdr->p_vaddr);
-        size_t size = phdr->p_memsz;
-        inst_t *vaddr_end = (inst_t *) ((uintptr_t) vaddr_start + size);
-
-        struct pac_procs procs = { 0 };
-        if (!svc_mode)
-            allocate_procs((uintptr_t) vaddr_end, &procs);
-
-        log("[%d:%s] patching segment %p-%p", cnt, filename, vaddr_start, vaddr_end);
-
-        /* Need PROT_EXEC here to be able to execute mprotect in libc later */
-        if (mprotect((void *)ALIGN_DOWN((uintptr_t) vaddr_start, page_size), size, PROT_READ | PROT_EXEC | PROT_WRITE))
-            die("mprotect: %s", strerror(errno));
-
-        phdr_patch(filename, vaddr_start, vaddr_end-vaddr_start, &procs, &stat);
-
-        if (mprotect((void *)ALIGN_DOWN((uintptr_t) vaddr_start,page_size), size, PROT_READ | PROT_EXEC))
-            die("mprotect: %s", strerror(errno));
-    }
-
-    cnt++;
-
-    clock_gettime(CLOCK_MONOTONIC_RAW, &tp1);
-    timespec_diff(&tp1, &tp0, &diff);
-
-    if (stat_file)
-        fprintf(stat_file, "%d,%s,%s,%lld.%09lld,%ld,%ld,%ld,%ld\n",
-                pid, run_id, filename,
-                (long long) diff.tv_sec, (long long) diff.tv_nsec,
-                stat.total_pac, stat.patched_pac,
-                stat.total_aut, stat.patched_aut);
-
-    total_stat.total_pac += stat.total_pac;
-    total_stat.total_aut += stat.total_aut;
-    total_stat.patched_pac += stat.patched_pac;
-    total_stat.patched_aut += stat.patched_aut;
-
-    return 0;
 }
 
 __attribute__ ((constructor))
 void libkpac_init()
 {
-    struct timespec tp0, tp1, diff;
-    clock_gettime(CLOCK_MONOTONIC_RAW, &tp0);
-
+    page_size = sysconf(_SC_PAGESIZE);
     pid = getpid();
-    if (readlink("/proc/self/exe", exe_path, sizeof(exe_path)) == -1)
-        die("readlink: %s", strerror(errno));
 
-    char *id_env = getenv("LIBKPAC_ID");
-    if (id_env)
-        run_id = id_env;
-
+    FILE *stat_file = NULL;
     char *stat_env = getenv("LIBKPAC_STAT");
     if (stat_env) {
         stat_file = fopen(stat_env, "a");
@@ -357,22 +360,82 @@ void libkpac_init()
             die("fopen: %s", strerror(errno));
     }
 
-    char *svc_env = getenv("LIBKPAC_SVC");
-    if (svc_env && !strcmp(svc_env, "1"))
-        svc_mode = true;
-
-    if (dl_iterate_phdr(phdr_callback, NULL))
-        die("dl_iterate_phdr");
-
-    clock_gettime(CLOCK_MONOTONIC_RAW, &tp1);
-    timespec_diff(&tp1, &tp0, &diff);
-
-    if (stat_file) {
-        fprintf(stat_file, "%d,%s,TOTAL,%lld.%09lld,%ld,%ld,%ld,%ld\n",
-                pid, run_id,
-                (long long) diff.tv_sec, (long long) diff.tv_nsec,
-                total_stat.total_pac, total_stat.patched_pac,
-                total_stat.total_aut, total_stat.patched_aut);
+    char *mode_env = getenv("LIBKPAC_MODE");
+    if (mode_env) {
+        if (!strcmp(mode_env, "svc-only"))
+            mode = MODE_SVC_ONLY;
+        else if (!strcmp(mode_env, "kpacd-only"))
+            mode = MODE_KPACD_ONLY;
+        else if (!strcmp(mode_env, "kpacd-svc"))
+            mode = MODE_KPACD_SVC;
+        else
+            die("Invalid mode: %s", mode_env);
     }
 
+    ssize_t ret = proc_maps(PROC_PID_SELF, vmas, NR_VMAS);
+    if (ret == -1)
+        die("proc_maps: %s", strerror(errno));
+    nr_vmas = ret;
+
+    log("Virtual memory areas:");
+    for (size_t i = 0; i < nr_vmas; i++) {
+        log("%016lx-%016lx (%c%c%c%c) %s",
+            vmas[i].vm_start, vmas[i].vm_end,
+            vmas[i].r ? 'r' : '-', vmas[i].w ? 'w' : '-',
+            vmas[i].x ? 'x' : '-', vmas[i].p ? 'p' : '-',
+            vmas[i].pathname);
+    }
+
+    for (size_t i = 0; i < (size_t) nr_vmas; i++) {
+        struct kpac_stat stat = { 0 };
+        struct timespec tp0, tp1, diff;
+
+        struct proc_vma *vma = &vmas[i];
+        size_t vm_size = vma->vm_end - vma->vm_start;
+
+        clock_gettime(CLOCK_MONOTONIC_RAW, &tp0);
+
+        /* We're interested only in executable areas */
+        if (!vma->x)
+            continue;
+
+        /* Skip vdso and ourselves */
+        if (strstr(vma->pathname, "[vdso]") ||
+            strstr(vma->pathname, "libkpac.so")) {
+
+            log("[%s] skipping", vma->pathname);
+            continue;
+        }
+
+        log("[%s] patching segment %lx-%lx", vma->pathname, vma->vm_start, vma->vm_end);
+
+        /* Need PROT_EXEC here to be able to execute mprotect in libc later */
+        if (mprotect((void *) vma->vm_start, vm_size, PROT_READ | PROT_EXEC | PROT_WRITE))
+            die("mprotect: %s", strerror(errno));
+
+        /* Work on this VMA */
+        vma_patch(vma, &stat);
+
+        /* Restore security */
+        if (mprotect((void *) vma->vm_start, vm_size, PROT_READ | PROT_EXEC))
+            die("mprotect: %s", strerror(errno));
+
+        clock_gettime(CLOCK_MONOTONIC_RAW, &tp1);
+        timespec_diff(&tp1, &tp0, &diff);
+
+        if (stat_file)
+            fprintf(stat_file, "%s,%lld.%09lld,%ld,%ld,%ld,%ld\n",
+                    vma->pathname,
+                    (long long) diff.tv_sec, (long long) diff.tv_nsec,
+                    stat.pac.total, stat.pac.patched,
+                    stat.aut.total, stat.aut.patched);
+    }
+
+    for (struct kpac_routine *i = routine_own.prev; i != NULL; i = i->prev) {
+        size_t len = &__stop_text_kpac - &__start_text_kpac;
+        uintptr_t page = ALIGN_DOWN((uintptr_t) i, page_size);
+
+        if (mprotect((void *) page, len, PROT_READ | PROT_EXEC))
+            die("mprotect: %s", strerror(errno));
+    }
 }
