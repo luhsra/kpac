@@ -39,7 +39,6 @@
 enum {
     MODE_KPACD_SVC,
     MODE_SVC_ONLY,
-    MODE_KPACD_ONLY,
 };
 
 struct kpac_routine {
@@ -244,8 +243,7 @@ static bool patch_paciasp(inst_t *text, size_t len, size_t i)
     }
 
 fallback:
-    if (mode != MODE_KPACD_ONLY)
-        text[i] = INST_SVC_PAC;
+    text[i] = INST_SVC_PAC;
 
     return false;
 }
@@ -308,8 +306,7 @@ static bool patch_autiasp(inst_t *text, size_t len, size_t i)
     }
 
 fallback:
-    if (mode != MODE_KPACD_ONLY)
-        text[i] = INST_SVC_AUT;
+    text[i] = INST_SVC_AUT;
 
     return false;
 }
@@ -364,8 +361,6 @@ void libkpac_init()
     if (mode_env) {
         if (!strcmp(mode_env, "svc-only"))
             mode = MODE_SVC_ONLY;
-        else if (!strcmp(mode_env, "kpacd-only"))
-            mode = MODE_KPACD_ONLY;
         else if (!strcmp(mode_env, "kpacd-svc"))
             mode = MODE_KPACD_SVC;
         else
