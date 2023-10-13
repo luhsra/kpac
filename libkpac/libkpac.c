@@ -42,8 +42,8 @@ enum {
 };
 
 struct kpac_routine {
-    void *pac_0, *pac_8;
-    void *aut_0, *aut_8;
+    void *pac;
+    void *aut;
 
     struct kpac_routine *prev; /* last allocated */
 };
@@ -57,24 +57,22 @@ struct kpac_stat {
     } aut;
 };
 
+#define INST_PER_TRAMPOLINE 3
 extern char __start_text_kpac;
-extern void kpac_pac_8(void);
+/* kpac_pac_{504..8} */
 extern void kpac_pac_0(void);
-extern void kpac_aut_8(void);
+/* kpac_aut_{504..8} */
 extern void kpac_aut_0(void);
 extern char __stop_text_kpac;
 
 static struct kpac_routine routine_own = {
-    .pac_8 = kpac_pac_8,
-    .pac_0 = kpac_pac_0,
-    .aut_8 = kpac_aut_8,
-    .aut_0 = kpac_aut_0,
+    .pac = kpac_pac_0,
+    .aut = kpac_aut_0,
     .prev = NULL, /* Dynamically allocated routines start here */
 };
 
 /* Globals */
 static pid_t pid;
-static char exepath[1024];
 static long page_size;
 
 static unsigned mode = MODE_KPACD_SVC;
@@ -93,7 +91,37 @@ static inline void timespec_diff(struct timespec *a, struct timespec *b,
     }
 }
 
-intptr_t vma_find_hole(uintptr_t current, uintptr_t min, uintptr_t max)
+static void *routine_pac(struct kpac_routine *routine, long offset)
+{
+    if (offset == 0)
+        return routine->pac;
+
+    if (offset >= 8 && offset <= 504 && offset % 8 == 0) {
+        long index = 1 + (offset - 8) / 8;
+        return (inst_t *) routine->pac - index * INST_PER_TRAMPOLINE;
+    }
+
+    log("no pac trampoline for offset %ld", offset);
+
+    return NULL;
+}
+
+static void *routine_aut(struct kpac_routine *routine, long offset)
+{
+    if (offset == 0)
+        return routine->aut;
+
+    if (offset >= 8 && offset <= 504 && offset % 8 == 0) {
+        long index = 1 + (offset - 8) / 8;
+        return (inst_t *) routine->aut - index * INST_PER_TRAMPOLINE;
+    }
+
+    log("no aut trampoline for offset %ld", offset);
+
+    return NULL;
+}
+
+static intptr_t vma_find_hole(uintptr_t current, uintptr_t min, uintptr_t max)
 {
     size_t vma_cur;
     uintptr_t hole;
@@ -144,15 +172,13 @@ static struct kpac_routine *allocate_routine(void *hole)
 
     /* Fill metadata */
     struct kpac_routine *rout = (void *) ((uintptr_t) hole + len);
-    rout->pac_0 = hole + ((char *) kpac_pac_0 - &__start_text_kpac);
-    rout->pac_8 = hole + ((char *) kpac_pac_8 - &__start_text_kpac);
-    rout->aut_0 = hole + ((char *) kpac_aut_0 - &__start_text_kpac);
-    rout->aut_8 = hole + ((char *) kpac_aut_8 - &__start_text_kpac);
+    rout->pac = hole + ((char *) kpac_pac_0  - &__start_text_kpac);
+    rout->aut = hole + ((char *) kpac_aut_0  - &__start_text_kpac);
 
     return rout;
 }
 
-struct kpac_routine *find_routine(void *branch)
+static struct kpac_routine *find_routine(void *branch)
 {
     size_t kpac_len = &__stop_text_kpac - &__start_text_kpac;
     size_t padding = ALIGN_UP(kpac_len + sizeof(struct kpac_routine),
@@ -165,7 +191,7 @@ struct kpac_routine *find_routine(void *branch)
     /* The last one allocated is a likely candidate */
     struct kpac_routine *needle = NULL;
     for (needle = &routine_own; needle != NULL; needle = needle->prev) {
-        uintptr_t addr = (uintptr_t) needle->pac_0;
+        uintptr_t addr = (uintptr_t) needle->pac;
         if (IN_RANGE(addr, range_min, range_max))
             return needle;
     }
@@ -199,8 +225,10 @@ static bool patch_paciasp(inst_t *text, size_t len, size_t i)
     if (stp_pre(text[i+1], &rn, &rt1, &rt2) &&
         rn == REG_SP && (rt1 == REG_LR || rt2 == REG_LR)) {
 
+        void *fn = routine_pac(routine, rt1 == REG_LR ? 0 : 8);
+
         text[i] = text[i+1];
-        emit_bl(&text[i+1], rt1 == REG_LR ? routine->pac_0 : routine->pac_8);
+        emit_bl(&text[i+1], fn);
         return true;
     }
 
@@ -209,8 +237,10 @@ static bool patch_paciasp(inst_t *text, size_t len, size_t i)
     if (str_pre(text[i+1], &rn, &rt1) &&
         rn == REG_SP && rt1 == REG_LR) {
 
+        void *fn = routine_pac(routine, 0);
+
         text[i] = text[i+1];
-        emit_bl(&text[i+1], routine->pac_0);
+        emit_bl(&text[i+1], fn);
         return true;
     }
 
@@ -222,22 +252,30 @@ static bool patch_paciasp(inst_t *text, size_t len, size_t i)
         rn == REG_SP && rd == REG_SP) {
 
         /* stp x29, x30, [sp] */
-        if (stp_off(text[i+2], &rn, &rt1, &rt2, &off) && off == 0 &&
+        if (stp_off(text[i+2], &rn, &rt1, &rt2, &off) &&
             rn == REG_SP && (rt1 == REG_LR || rt2 == REG_LR)) {
+
+            void *fn = routine_pac(routine, rt1 == REG_LR ? off : 8 + off);
+            if (!fn)
+                goto fallback;
 
             text[i] = text[i+1];
             text[i+1] = text[i+2];
-            emit_bl(&text[i+2], rt1 == REG_LR ? routine->pac_0 : routine->pac_8);
+            emit_bl(&text[i+2], fn);
             return true;
         }
 
         /* str x30, [sp] */
-        if (str_off(text[i+2], &rn, &rt1, &off) && off == 0 &&
+        if (str_off(text[i+2], &rn, &rt1, &off) &&
             rn == REG_SP && rt1 == REG_LR) {
+
+            void *fn = routine_pac(routine, off);
+            if (!fn)
+                goto fallback;
 
             text[i] = text[i+1];
             text[i+1] = text[i+2];
-            emit_bl(&text[i+2], routine->pac_0);
+            emit_bl(&text[i+2], fn);
             return true;
         }
     }
@@ -262,8 +300,10 @@ static bool patch_autiasp(inst_t *text, size_t len, size_t i)
     if (ldp_post(text[i-1], &rn, &rt1, &rt2) &&
         rn == REG_SP && (rt1 == REG_LR || rt2 == REG_LR)) {
 
+        void *fn = routine_aut(routine, rt1 == REG_LR ? 0 : 8);
+
         text[i] = text[i-1];
-        emit_bl(&text[i-1], rt1 == REG_LR ? routine->aut_0 : routine->aut_8);
+        emit_bl(&text[i-1], fn);
         return true;
     }
 
@@ -272,35 +312,45 @@ static bool patch_autiasp(inst_t *text, size_t len, size_t i)
     if (ldr_post(text[i-1], &rn, &rt1) &&
         rn == REG_SP && rt1 == REG_LR) {
 
+        void *fn = routine_aut(routine, 0);
+
         text[i] = text[i-1];
-        emit_bl(&text[i-1], routine->aut_0);
+        emit_bl(&text[i-1], fn);
         return true;
     }
 
     /* (ldp/ldr)
      * add sp, sp, #N
      * autiasp */
-    if (i < 2 &&
+    if (i >= 2 &&
         add_imm(text[i-1], &rn, &rd) &&
         rn == REG_SP && rd == REG_SP) {
 
-        /* ldp x29, x30, [sp], #N */
-        if (ldp_off(text[i-2], &rn, &rt1, &rt2, &off) && off == 0 &&
+        /* ldp x29, x30, [sp, #N] */
+        if (ldp_off(text[i-2], &rn, &rt1, &rt2, &off) &&
             rn == REG_SP && (rt1 == REG_LR || rt2 == REG_LR)) {
+
+            void *fn = routine_aut(routine, rt1 == REG_LR ? off : 8 + off);
+            if (!fn)
+                goto fallback;
 
             text[i] = text[i-1];
             text[i-1] = text[i-2];
-            emit_bl(&text[i-2], rt1 == REG_LR ? routine->aut_0 : routine->aut_8);
+            emit_bl(&text[i-2], fn);
             return true;
         }
 
-        /* ldr x30, [sp], #N */
-        if (ldr_off(text[i-2], &rn, &rt1, &off) && off == 0 &&
+        /* ldr x30, [sp, #N] */
+        if (ldr_off(text[i-2], &rn, &rt1, &off) &&
             rn == REG_SP && rt1 == REG_LR) {
+
+            void *fn = routine_aut(routine, off);
+            if (!fn)
+                goto fallback;
 
             text[i] = text[i-1];
             text[i-1] = text[i-2];
-            emit_bl(&text[i-2], routine->aut_0);
+            emit_bl(&text[i-2], fn);
             return true;
         }
     }

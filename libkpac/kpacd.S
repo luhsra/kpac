@@ -14,12 +14,24 @@
 	 * including not saving them in the caller.  Act pessimistically and
 	 * save them on the stack. */
 
-	.global kpac_pac_8
-kpac_pac_8:
-	/* lr is at [sp+8] */
+	.altmacro
+	.macro generate_trampolines name, off, stop, step, label
+
+	.global kpac_\name\()_\off\()
+	kpac_\name\()_\off\():
+	/* lr is at [sp+\off] */
 	str	x10, [sp, #-8]
-	add	x10, sp, 8
-	b	2f
+	add	x10, sp, \off
+	b	\label
+
+	.if \off-\stop > 0
+	generate_trampolines \name, %(\off-\step), \stop, \step, \label
+	.endif
+
+	.endm
+
+	/* imm7 of stp goes up to +504 */
+	generate_trampolines pac, 504, 8, 8, 2f
 
 	.global kpac_pac_0
 kpac_pac_0:
@@ -49,12 +61,8 @@ kpac_pac_0:
 
 	ret
 
-	.global kpac_aut_8
-kpac_aut_8:
-	/* lr is at [sp+8] */
-	str	x10, [sp, #-8]
-	add	x10, sp, 8
-	b	2f
+	/* imm7 of ldp goes up to +504 */
+	generate_trampolines aut, 504, 8, 8, 2f
 
 	.global kpac_aut_0
 kpac_aut_0:

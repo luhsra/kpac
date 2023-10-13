@@ -50,7 +50,7 @@ static bool stp_off(inst_t x, int *rn, int *rt1, int *rt2, int *imm)
     if (mask_at(x, 0x3FF, 22) != 0b1010100100)
         return false;
 
-    *imm = mask_at(x, 0x7F, 15);
+    *imm = mask_at(x, 0x7F, 15) * 8;
 
     *rn = mask_at(x, 0x1F, 5);
     *rt1 = mask_at(x, 0x1F, 0);
@@ -82,7 +82,7 @@ static bool str_off(inst_t x, int *rn, int *rt, int *imm)
     if (mask_at(x, 0x3FF, 22) != 0b1111100100)
         return false;
 
-    *imm = mask_at(x, 0xFFF, 10);
+    *imm = mask_at(x, 0xFFF, 10) * 8;
     *rt = mask_at(x, 0x1F, 0);
     *rn = mask_at(x, 0x1F, 5);
 
@@ -116,7 +116,7 @@ static bool ldp_off(inst_t x, int *rn, int *rt1, int *rt2, int *imm)
     if (mask_at(x, 0x3FF, 22) != 0b1010100101)
         return false;
 
-    *imm = mask_at(x, 0x7F, 15);
+    *imm = mask_at(x, 0x7F, 15) * 8;
 
     *rn = mask_at(x, 0x1F, 5);
     *rt1 = mask_at(x, 0x1F, 0);
@@ -148,7 +148,7 @@ static bool ldr_off(inst_t x, int *rn, int *rt, int *imm)
     if (mask_at(x, 0x3FF, 22) != 0b1111100101)
         return false;
 
-    *imm = mask_at(x, 0xFFF, 10);
+    *imm = mask_at(x, 0xFFF, 10) * 8;
     *rt = mask_at(x, 0x1F, 0);
     *rn = mask_at(x, 0x1F, 5);
 

@@ -14,11 +14,13 @@ $(TARGET): $(OBJS)
 	$(CROSS_COMPILE)$(CC) -shared $(LDFLAGS) -o $@ $^
 
 %.o: %.c
-	$(CROSS_COMPILE)$(CC) -c $(CFLAGS) -o $@ $^
+	$(CROSS_COMPILE)$(CC) -c $(CFLAGS) -MD -MP -o $@ $<
 
 %.o: %.S
-	$(CROSS_COMPILE)$(CC) -c $(CFLAGS) -o $@ $^
+	$(CROSS_COMPILE)$(CC) -c $(CFLAGS) -MD -MP -o $@ $<
 
 .PHONY: clean
 clean:
 	$(RM) $(OBJS) $(TARGET)
+
+-include $(OBJS:%.o=%.d)
