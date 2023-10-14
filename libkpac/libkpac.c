@@ -213,7 +213,9 @@ static struct kpac_routine *find_routine(void *branch)
 
 static bool patch_paciasp(inst_t *text, size_t len, size_t i)
 {
-    int rn, rd, rt1, rt2, off;
+    int rn = 0, rd = 0;
+    int rt1 = 0, rt2 = 0;
+    int off = 0;
 
     if (mode == MODE_SVC_ONLY || i + 1 >= len)
         goto fallback;
@@ -221,8 +223,8 @@ static bool patch_paciasp(inst_t *text, size_t len, size_t i)
     struct kpac_routine *routine = find_routine(&text[i]);
 
     /* paciasp
-     * stp x29, x30, [sp, #-N]! */
-    if (stp_pre(text[i+1], &rn, &rt1, &rt2) &&
+     * stp x29, x30, [sp, #-N]! or str x30, [sp, #-N]! */
+    if ((stp_pre(text[i+1], &rn, &rt1, &rt2) || str_pre(text[i+1], &rn, &rt1)) &&
         rn == REG_SP && (rt1 == REG_LR || rt2 == REG_LR)) {
 
         void *fn = routine_pac(routine, rt1 == REG_LR ? 0 : 8);
@@ -233,50 +235,38 @@ static bool patch_paciasp(inst_t *text, size_t len, size_t i)
     }
 
     /* paciasp
-     * str x30, [sp, #-N]! */
-    if (str_pre(text[i+1], &rn, &rt1) &&
-        rn == REG_SP && rt1 == REG_LR) {
-
-        void *fn = routine_pac(routine, 0);
-
-        text[i] = text[i+1];
-        emit_bl(&text[i+1], fn);
-        return true;
-    }
-
-    /* paciasp
      * sub sp, sp, #N
      * (stp/str) */
-    if (i + 2 < len &&
-        sub_imm(text[i+1], &rn, &rd) &&
+    int frame_reg = -1;
+    if (i+1 < len &&
+        (sub_imm(text[i+1], &rn, &rd) || sub_reg(text[i+1], &rn, &rd, &frame_reg)) &&
         rn == REG_SP && rd == REG_SP) {
 
-        /* stp x29, x30, [sp] */
-        if (stp_off(text[i+2], &rn, &rt1, &rt2, &off) &&
-            rn == REG_SP && (rt1 == REG_LR || rt2 == REG_LR)) {
+        /* Search downwards for stp X, x30, [sp, #M] or str x30, [sp, #M],
+         * allowing other stp/str to stack inbetween */
 
-            void *fn = routine_pac(routine, rt1 == REG_LR ? off : 8 + off);
-            if (!fn)
-                goto fallback;
+        for (size_t j = i+2; j < len; j++) {
+            if (!((stp_off(text[j], &rn, &rt1, &rt2, &off) ||
+                   str_off(text[j], &rn, &rt1, &off)) && rn == REG_SP)) {
+                /* Allow move to register containing stack frame size */
+                if (mov_imm(text[j], &rd) && rd == frame_reg)
+                    continue;
+                break;
+            }
 
-            text[i] = text[i+1];
-            text[i+1] = text[i+2];
-            emit_bl(&text[i+2], fn);
-            return true;
-        }
+            if (rt1 == REG_LR || rt2 == REG_LR) {
+                void *fn = routine_pac(routine, rt1 == REG_LR ? off : 8 + off);
+                if (!fn)
+                    goto fallback;
 
-        /* str x30, [sp] */
-        if (str_off(text[i+2], &rn, &rt1, &off) &&
-            rn == REG_SP && rt1 == REG_LR) {
+                /* Shift everything into paciasp */
+                for (size_t k = i; k < j; k++)
+                    text[k] = text[k+1];
 
-            void *fn = routine_pac(routine, off);
-            if (!fn)
-                goto fallback;
-
-            text[i] = text[i+1];
-            text[i+1] = text[i+2];
-            emit_bl(&text[i+2], fn);
-            return true;
+                /* Emit call to pac after LR is stored on the stack */
+                emit_bl(&text[j], fn);
+                return true;
+            }
         }
     }
 
@@ -288,16 +278,18 @@ fallback:
 
 static bool patch_autiasp(inst_t *text, size_t len, size_t i)
 {
-    int rn, rd, rt1, rt2, off;
+    int rn = 0, rd = 0;
+    int rt1 = 0, rt2 = 0;
+    int off = 0;
 
     if (mode == MODE_SVC_ONLY || i < 1)
         goto fallback;
 
     struct kpac_routine *routine = find_routine(&text[i]);
 
-    /* ldp x29, x30, [sp], #N
+    /* ldp x29, x30, [sp], #N or ldr x30, [sp], #N
      * autiasp */
-    if (ldp_post(text[i-1], &rn, &rt1, &rt2) &&
+    if ((ldp_post(text[i-1], &rn, &rt1, &rt2) || ldr_post(text[i-1], &rn, &rt1)) &&
         rn == REG_SP && (rt1 == REG_LR || rt2 == REG_LR)) {
 
         void *fn = routine_aut(routine, rt1 == REG_LR ? 0 : 8);
@@ -307,51 +299,39 @@ static bool patch_autiasp(inst_t *text, size_t len, size_t i)
         return true;
     }
 
-    /* ldr x30, [sp], #N
-     * autiasp */
-    if (ldr_post(text[i-1], &rn, &rt1) &&
-        rn == REG_SP && rt1 == REG_LR) {
-
-        void *fn = routine_aut(routine, 0);
-
-        text[i] = text[i-1];
-        emit_bl(&text[i-1], fn);
-        return true;
-    }
-
     /* (ldp/ldr)
      * add sp, sp, #N
      * autiasp */
-    if (i >= 2 &&
-        add_imm(text[i-1], &rn, &rd) &&
+    int frame_reg = -1;
+    if (i >= 1 &&
+        (add_imm(text[i-1], &rn, &rd) || add_reg(text[i-1], &rn, &rd, &frame_reg)) &&
         rn == REG_SP && rd == REG_SP) {
 
-        /* ldp x29, x30, [sp, #N] */
-        if (ldp_off(text[i-2], &rn, &rt1, &rt2, &off) &&
-            rn == REG_SP && (rt1 == REG_LR || rt2 == REG_LR)) {
+        /* Search upwards for ldp X, x30, [sp, #M] or ldr x30, [sp, #M],
+         * allowing other ldp/ldr to stack inbetween */
 
-            void *fn = routine_aut(routine, rt1 == REG_LR ? off : 8 + off);
-            if (!fn)
-                goto fallback;
+        for (ssize_t j = i-2; j >= 0; j--) {
+            if (!((ldp_off(text[j], &rn, &rt1, &rt2, &off) ||
+                   ldr_off(text[j], &rn, &rt1, &off)) && rn == REG_SP)) {
+                /* Allow move to register containing stack frame size */
+                if (mov_imm(text[j], &rd) && rd == frame_reg)
+                    continue;
+                break;
+            }
 
-            text[i] = text[i-1];
-            text[i-1] = text[i-2];
-            emit_bl(&text[i-2], fn);
-            return true;
-        }
+            if (rt1 == REG_LR || rt2 == REG_LR) {
+                void *fn = routine_aut(routine, rt1 == REG_LR ? off : 8 + off);
+                if (!fn)
+                    goto fallback;
 
-        /* ldr x30, [sp, #N] */
-        if (ldr_off(text[i-2], &rn, &rt1, &off) &&
-            rn == REG_SP && rt1 == REG_LR) {
+                /* Shift everything into autiasp */
+                for (ssize_t k = i; k > j; k--)
+                    text[k] = text[k-1];
 
-            void *fn = routine_aut(routine, off);
-            if (!fn)
-                goto fallback;
-
-            text[i] = text[i-1];
-            text[i-1] = text[i-2];
-            emit_bl(&text[i-2], fn);
-            return true;
+                /* Emit call to aut before LR is loaded from the stack */
+                emit_bl(&text[j], fn);
+                return true;
+            }
         }
     }
 

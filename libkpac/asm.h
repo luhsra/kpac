@@ -188,4 +188,50 @@ static bool add_imm(inst_t x, int *rn, int *rd)
     return true;
 }
 
+static bool add_reg(inst_t x, int *rn, int *rd, int *rm)
+{
+    /* extended/shifted register add,
+     * See p. C6-1254 of the reference manual */
+
+    if (mask_at(x, 0xFF, 24) != 0b10001011)
+        return false;
+
+    *rd = mask_at(x, 0x1F, 0);
+    *rn = mask_at(x, 0x1F, 5);
+    *rm = mask_at(x, 0x1F, 16);
+
+    return true;
+}
+
+static bool sub_reg(inst_t x, int *rn, int *rd, int *rm)
+{
+    /* extended/shifted register sub,
+     * See p. C6-1254 of the reference manual */
+
+    if (mask_at(x, 0xFF, 24) != 0b11001011)
+        return false;
+
+    *rd = mask_at(x, 0x1F, 0);
+    *rn = mask_at(x, 0x1F, 5);
+    *rm = mask_at(x, 0x1F, 16);
+
+    return true;
+}
+
+
+static bool mov_imm(inst_t x, int *rd)
+{
+    /* (inverted) wide immediate mov,
+     * See p. C6-1791 of the reference manual */
+
+    if (mask_at(x, 0x1FF, 23) != 0b110100101)
+        return false;
+    if (mask_at(x, 0x1FF, 23) != 0b100100101)
+        return false;
+
+    *rd = mask_at(x, 0x1F, 0);
+
+    return true;
+}
+
 #endif                          /* LIBKPAC_ASM_H */
