@@ -1,6 +1,6 @@
 TOPTARGETS := all clean
 
-SUBDIRS := gcc libkpac bench pac-pl
+SUBDIRS := gcc libkpac bench pac-pl latency
 
 $(TOPTARGETS): $(SUBDIRS)
 $(SUBDIRS):
