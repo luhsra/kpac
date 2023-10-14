@@ -37,7 +37,6 @@ enum { PROLOGUE, EPILOGUE };
 
 static const char *prologue_s = NULL;
 static const char *epilogue_s = NULL;
-static const char *init_function = NULL;
 
 enum {
     SIGN_SCOPE_nil = 0,         // None
@@ -59,7 +58,6 @@ static const char *inst_stat_file = NULL;
 extern gcc::context *g;
 
 static unsigned int execute_inst_pac(void);
-static unsigned int execute_init_pac(void);
 
 // Structure describing an attribute
 static struct attribute_spec scope_attr = {
@@ -94,66 +92,10 @@ public:
 // Instantiate a new instrumentation RTL pass.
 static pass_inst_pac inst_pass = pass_inst_pac(g);
 
-// Metadata for the initialization pass working on GIMPLE.  Registered only if
-// the init function is provided.  Attaches the init function to main.
-const pass_data pass_data_init_pac = {
-    .type = GIMPLE_PASS,
-    .name = "init_pac",
-    .optinfo_flags = OPTGROUP_NONE,
-    .tv_id = TV_NONE,
-    .properties_required = 0,
-    .properties_provided = 0,
-    .properties_destroyed = 0,
-    .todo_flags_start = 0,
-    .todo_flags_finish = 0,
-};
-
-class pass_init_pac : public gimple_opt_pass
-{
-public:
-    pass_init_pac (gcc::context *ctxt) : gimple_opt_pass (pass_data_init_pac, ctxt) {}
-    virtual unsigned int execute(function *)
-    {
-        return execute_init_pac();
-    }
-};
-
-// Instantiate a new initialization pass.
-static pass_init_pac init_pass = pass_init_pac(g);
-
 // Plugin callback called during attribute registration.
 static void register_attributes(void *event_data, void *data)
 {
     register_attribute(&scope_attr);
-}
-
-// Attach initialization function to main
-static unsigned int execute_init_pac(void)
-{
-    tree fn_type, function;
-    basic_block bb;
-    gimple *stmt;
-    gimple_stmt_iterator gsi;
-    gcall *call;
-
-    const char *fn_name = IDENTIFIER_POINTER(DECL_NAME(current_function_decl));
-
-    if (strcmp(fn_name, "main") != 0)
-        return 0;
-
-    fn_type = build_function_type_list(void_type_node, void_type_node, NULL_TREE);
-    function = build_fn_decl(init_function, fn_type);
-
-    bb = ENTRY_BLOCK_PTR_FOR_FN(cfun)->next_bb;
-    stmt = gsi_stmt(gsi_start_bb(bb));
-    gsi = gsi_for_stmt(stmt);
-
-    call = gimple_build_call(function, 0);
-    gsi_insert_before(&gsi, call, GSI_NEW_STMT);
-
-    dbg(PLUGIN_NAME ": %s: Attached %s to %s.\n", main_input_filename, init_function, fn_name);
-
-    return 0;
 }
 
 #ifdef GCC_AARCH64_H
@@ -282,11 +224,6 @@ static bool signing_required(void)
     int scope = get_current_scope();
 
     if (scope == SIGN_SCOPE_nil)
-        return false;
-
-    // Do not instrument init-related functions
-    if (init_function && (strcmp(CURRENT_FN_NAME(), init_function) == 0 ||
-                          strcmp(CURRENT_FN_NAME(), "main") == 0))
         return false;
 
     /* Turn return address signing off in any function that uses
@@ -464,13 +401,6 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
         .pos_op = PASS_POS_INSERT_AFTER,
     };
 
-    struct register_pass_info pass_init = {
-        .pass = &init_pass,
-        .reference_pass_name = "fixup_cfg",
-        .ref_pass_instance_number = 1,
-        .pos_op = PASS_POS_INSERT_BEFORE,
-    };
-
     if (strncmp(PLUGIN_GCC_REQ, ver->basever, sizeof(PLUGIN_GCC_REQ))) {
         err(PLUGIN_NAME ": GCC %s required.\n", PLUGIN_GCC_REQ);
         return 1;
@@ -506,9 +436,6 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
 
             free(prolp);
             free(epilp);
-        } else if (!strcmp(key, "init")) {
-            if (value[0])
-                init_function = value;
         } else if (!strcmp(key, "dump")) {
             if (value[0])
                 inst_stat_file = value;
@@ -557,9 +484,6 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
     register_callback(PLUGIN_NAME, PLUGIN_PASS_MANAGER_SETUP, NULL, &pass_inst);
     // Save statistics at the end.
     register_callback(PLUGIN_NAME, PLUGIN_FINISH_UNIT, inst_stat_dump, NULL);
-
-    if (init_function)
-        register_callback(PLUGIN_NAME, PLUGIN_PASS_MANAGER_SETUP, NULL, &pass_init);
 
     return 0;
 }
