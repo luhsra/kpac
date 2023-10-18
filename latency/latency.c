@@ -8,14 +8,16 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include <math.h>
+#include <time.h>
 
 #define STR1(x)  #x
 #define STR(x)   STR1(x)
 
-#define NR_RUNS			1000000
+#define NR_RUNS			10000000
 
 #define KPAC_BASE		0x9AC00000000
 #define KPAC_OP_PAC		1
+#define KPAC_OP_AUT		2
 #define KPAC_PLAIN		8
 #define KPAC_CIPHER		24
 
@@ -33,8 +35,8 @@
     } while (0)
 
 /* Enable in the kernel */
-#define CNT_REG "PMCCNTR_EL0"
-// #define CNT_REG "CNTVCT_EL0"
+//#define CNT_REG "PMCCNTR_EL0"
+#define CNT_REG "CNTVCT_EL0"
 
 static void pac_pl_init()
 {
@@ -57,17 +59,11 @@ static void pac_pl_init()
         die("device test failed");
 }
 
-static void summary(char *name, unsigned long *buf, unsigned long long sum)
+static inline unsigned long cntfrq(void)
 {
-    double avg = sum/NR_RUNS;
-
-    double acc = 0;
-    for (int i = 0; i < NR_RUNS; i++) {
-        acc += (buf[i]-avg)*(buf[i]-avg);
-    }
-    double std = sqrt(acc / NR_RUNS);
-
-    printf("%s avg = %lg ± %lg\n", name, avg, std/sqrt(NR_RUNS));
+    unsigned long ret;
+    asm volatile ("mrs %0, CNTFRQ_EL0" : "=r" (ret));
+    return ret;
 }
 
 int main(int argc, char *argv[0])
@@ -76,29 +72,34 @@ int main(int argc, char *argv[0])
     bool pacpl = false;
     bool svc = false;
     bool kpacd = false;
+    bool freq = false;
 
-    while ((opt = getopt(argc, argv, "lsd")) != -1) {
+    while ((opt = getopt(argc, argv, "lsdf")) != -1) {
         switch (opt) {
         case 'l': pacpl = true; break;
         case 's': svc = true; break;
         case 'd': kpacd = true; break;
+        case 'f': freq = true; break;
         default:
-            fprintf(stderr, "Usage: %s [-lsd]\n", argv[0]);
+            fprintf(stderr, "Usage: %s [-lsdf]\n", argv[0]);
             exit(EXIT_FAILURE);
         }
     }
 
-    static unsigned long buf[NR_RUNS];
+    unsigned long pln = 0x0000DEADBEEFDEAD;
+    unsigned long ctx = 0x0000BEEFDEADBEEF;
+
+    if (freq)
+        printf("\\drefset{/cntfrq}{%lu}\n", cntfrq());
 
     if (pacpl) {
         pac_pl_init();
 
-        unsigned long long acc = 0;
+        double cma    = 0;
+        double acc    = 0;
+        double acc_sq = 0;
         for (int i = 0; i < NR_RUNS; i++) {
             unsigned long t0, t1;
-
-            unsigned long pln = 0x0000DEADBEEFDEAD;
-            unsigned long ctx = 0x0000BEEFDEADBEEF;
 
             asm volatile ("isb\n"
                           "mrs %0, " CNT_REG "\n"
@@ -109,46 +110,60 @@ int main(int argc, char *argv[0])
 
                           "isb\n"
                           "mrs %1, " CNT_REG "\n"
-                          : "=r" (t0), "=r" (t1), "+r" (pln)
+                          : "=&r" (t0), "=&r" (t1), "+&r" (pln)
                           : "r" (ctx),  "r" (PAC_PL_BASE));
 
-            buf[i] = t1 - t0;
-            acc += t1 - t0;
+            unsigned long diff = t1 - t0;
+
+            cma = (diff + (i+1) * cma) / (i+2);
         }
 
-        summary("pac-pl", buf, acc);
+        printf("\\drefset{/pac-pl}{%g}\n", cma);
     }
 
     if (svc) {
-        unsigned long long acc = 0;
+        double cma    = 0;
+        double acc    = 0;
+        double acc_sq = 0;
         for (int i = 0; i < NR_RUNS; i++) {
             unsigned long t0, t1;
-            asm volatile ("isb\n"
+
+            unsigned long sp_saved;
+            unsigned long lr_saved;
+
+            asm volatile ("mov %2, sp\n"
+                          "mov %3, lr\n"
+                          "mov lr, %4\n"
+                          "mov sp, %5\n"
+
+                          "isb\n"
                           "mrs %0, " CNT_REG "\n"
 
                           "svc #0x9AC\n"
 
                           "isb\n"
                           "mrs %1, " CNT_REG "\n"
-                          : "=r" (t0), "=r" (t1));
 
-            buf[i] = t1 - t0;
-            acc += t1 - t0;
+                          "mov %4, lr\n"
+                          "mov sp, %2\n"
+                          "mov lr, %3\n"
+                          : "=&r" (t0), "=&r" (t1), "=&r" (sp_saved), "=&r" (lr_saved), "+&r" (pln)
+                          : "r" (ctx));
+
+            unsigned long diff = t1 - t0;
+
+            cma = (diff + (i+1) * cma) / (i+2);
         }
 
-        asm volatile ("svc #0x9AD\n");
-
-        summary("svc", buf, acc);
+        printf("\\drefset{/svc}{%g}\n", cma);
     }
 
     if (kpacd) {
-        unsigned long long acc = 0;
+        double cma    = 0;
         for (int i = 0; i < NR_RUNS; i++) {
             unsigned long t0, t1;
 
             unsigned long op = KPAC_OP_PAC;
-            unsigned long pln = 0x0000DEADBEEFDEAD;
-            unsigned long ctx = 0x0000BEEFDEADBEEF;
 
             asm volatile ("isb\n"
                           "mrs %0, " CNT_REG "\n"
@@ -164,14 +179,15 @@ int main(int argc, char *argv[0])
 
                           "isb\n"
                           "mrs %1, " CNT_REG "\n"
-                          : "=r" (t0), "=r" (t1), "+r" (op), "+r" (pln)
+                          : "=&r" (t0), "=&r" (t1), "+&r" (op), "+&r" (pln)
                           : "r" (ctx),  "r" (KPAC_BASE));
 
-            buf[i] = t1 - t0;
-            acc += t1 - t0;
+            unsigned long diff = t1 - t0;
+
+            cma = (diff + (i+1) * cma) / (i+2);
         }
 
-        summary("kpacd", buf, acc);
+        printf("\\drefset{/kpacd}{%g}\n", cma);
     }
 
     return 0;
