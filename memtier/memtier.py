@@ -15,7 +15,7 @@ from multiprocessing import cpu_count
 from platform import uname
 
 from versuchung.experiment import Experiment
-from versuchung.types import String, Integer
+from versuchung.types import String, Integer, Bool
 from versuchung.files import File, CSV_File, Directory
 
 from versuchung.execute import shell, shell_failok
@@ -54,7 +54,7 @@ def plugin_args(plugin, args):
 
     return s
 
-class Bench(Experiment):
+class Memtier(Experiment):
     def get_cpumasks(self):
         cpumasks = ""
         for i in range(cpu_count()):
@@ -86,10 +86,12 @@ class Bench(Experiment):
             uname().system, uname().release, uname().version
         ])),
 
-        "memcached":   Directory("../memcached-1.6.21"),
+        "memcached":   Directory("../memcached"),
         "memtier":     Directory("../memtier_benchmark"),
 
         "memtier_args": String("--test-time=100"),
+
+        "save_samples": Bool(False),
 
         "server_threads": String("32"),
         "client_threads": String("32"),
@@ -141,10 +143,11 @@ class Bench(Experiment):
 
             plugin_flags = ""
             if self.i.scope.value != 'nil':
-                plugin_flags = plugin_args(PLUGIN_DLL, args)
+                plugin_flags = " " + plugin_args(PLUGIN_DLL, args)
 
-            shell_failok("make clean")
-            shell("./configure \"CFLAGS=" + self.i.cflags.value + " " + plugin_flags + "\"")
+            shell("git clean -ffxd")
+            shell("./autogen.sh")
+            shell("./configure \"CFLAGS=" + self.i.cflags.value + plugin_flags + "\"")
             shell("make -j$(nproc)")
 
             with open(self.o.size.path, "w") as f:
@@ -156,7 +159,9 @@ class Bench(Experiment):
 
             logpath = os.path.join(self.o.log.path, "memcached.log");
             with open(logpath, 'w') as logfile:
-                memcached = sp.Popen(["./memcached", "-p", "22122", "-t", self.i.server_threads.value],
+                memcached = sp.Popen(["./memcached", "-p", "22122", "-t", self.i.server_threads.value,
+                                      "-o", "maxconns_fast=0", "-b", "32768", "-c", "32768"
+                                      ],
                                      stdout=logfile, stderr=logfile)
 
             del os.environ['LIBKPAC_STAT']
@@ -167,16 +172,18 @@ class Bench(Experiment):
             shell("taskset -cp " + self.i.client_cpus.value + " " + str(pid))
 
             get_samples = tempfile.NamedTemporaryFile(mode="r+")
-            shell("./memtier_benchmark -p 22122 -t " + self.i.client_threads.value +
-                  " -P memcache_text --print-percentiles 50,99,99.5,99.9" +
-                  " " + self.i.memtier_args.value +
-                  " --json-out-file=\"" + self.o.json.path + "\"" +
-                  " --hdr-file-prefix=\"" + self.o.HDR.path + "\"" +
-                  " -o \"" + self.o.output.path + "\"" +
-                  " --get-samples=\"" + get_samples.name + "\"")
+            sp.check_call("./memtier_benchmark -p 22122 -t " + self.i.client_threads.value +
+                          " -P memcache_text --print-percentiles 50,99,99.5,99.9" +
+                          " " + self.i.memtier_args.value +
+                          " --json-out-file=\"" + self.o.json.path + "\"" +
+                          " --hdr-file-prefix=\"" + self.o.HDR.path + "\"" +
+                          " -o \"" + self.o.output.path + "\"" +
+                          (" --get-samples=\"" + get_samples.name + "\"" if self.i.save_samples.value else ""),
+                          shell=True)
 
-            a = np.genfromtxt(get_samples.name)
-            np.savez_compressed(self.o.latency.path, a)
+            if self.i.save_samples.value:
+                a = np.genfromtxt(get_samples.name)
+                np.savez_compressed(self.o.latency.path, a)
 
         memcached.terminate()
 
@@ -187,6 +194,6 @@ class Bench(Experiment):
 
 
 if __name__ == "__main__":
-    experiment = Bench()
+    experiment = Memtier()
     dirname = experiment(sys.argv)
     print(dirname)
