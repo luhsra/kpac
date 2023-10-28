@@ -127,7 +127,8 @@ class Suite:
         tmp = tempfile.NamedTemporaryFile(mode="r+")
         args["dump"] = tmp.name
 
-        cflags += " " + plugin_args(PLUGIN_DLL, args)
+        if args['scope'] != 'nil':
+            cflags += " " + plugin_args(PLUGIN_DLL, args)
         os.environ["CFLAGS"] = cflags
 
         for b in self.benchmarks:
