@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+sudo taskset -cp 2 $$
+sudo renice -n -20 $$
+
+sudo chmod a+rx /sys/kernel/debug
+
+backend="$(cat /sys/kernel/debug/kpacd/backend)"
+
+if [ "$HOSTNAME" = "zynqmp" ] && [ "$backend" == "qarma" ]; then
+    ../latency.py --variant pac-pl
+fi
+
+../latency.py --variant syscall
+
+echo   | sudo tee /sys/kernel/debug/kpacd/*/cpumask
+echo 2 | sudo tee /sys/kernel/debug/kpacd/3/cpumask
+
+../latency.py --variant kpacd
+
+echo   | sudo tee /sys/kernel/debug/kpacd/*/cpumask

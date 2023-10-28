@@ -59,27 +59,22 @@ static void pac_pl_init()
         die("device test failed");
 }
 
-static inline unsigned long cntfrq(void)
-{
-    unsigned long ret;
-    asm volatile ("mrs %0, CNTFRQ_EL0" : "=r" (ret));
-    return ret;
-}
-
 int main(int argc, char *argv[0])
 {
     int opt;
     bool pacpl = false;
     bool svc = false;
     bool kpacd = false;
-    bool freq = true;
 
-    while ((opt = getopt(argc, argv, "lsdf")) != -1) {
+    unsigned long nr_runs = NR_RUNS;
+
+    while ((opt = getopt(argc, argv, "lsdn:")) != -1) {
         switch (opt) {
         case 'l': pacpl = true; break;
         case 's': svc = true; break;
         case 'd': kpacd = true; break;
-        case 'f': freq = true; break;
+        case 'n': nr_runs = atoi(optarg);
+            break;
         default:
             fprintf(stderr, "Usage: %s [-l|-s|-d] output\n", argv[0]);
             exit(EXIT_FAILURE);
@@ -101,16 +96,13 @@ int main(int argc, char *argv[0])
     unsigned long pln = 0x0000DEADBEEFDEAD;
     unsigned long ctx = 0x0000BEEFDEADBEEF;
 
-    if (freq)
-        printf("cntfrq: %lu\n", cntfrq());
-
     if (pacpl) {
         pac_pl_init();
 
         double cma    = 0;
         double acc    = 0;
         double acc_sq = 0;
-        for (int i = 0; i < NR_RUNS; i++) {
+        for (unsigned long i = 0; i < nr_runs; i++) {
             unsigned long t0, t1;
 
             asm volatile ("isb\n"
@@ -131,11 +123,11 @@ int main(int argc, char *argv[0])
             cma = (diff + (i+1) * cma) / (i+2);
         }
 
-        printf("pacpl: %g\n", cma);
+        printf("pacpl over %lu runs: %g\n", nr_runs, cma);
     } else if (svc) {
         double cma    = 0;
         double acc    = 0;
-        for (int i = 0; i < NR_RUNS; i++) {
+        for (unsigned long i = 0; i < nr_runs; i++) {
             unsigned long t0, t1;
 
             unsigned long sp_saved;
@@ -166,10 +158,10 @@ int main(int argc, char *argv[0])
             fprintf(out, "%lu\n", diff);
         }
 
-        printf("%g\n", cma);
+        printf("svc over %lu runs: %g\n", nr_runs, cma);
     } else if (kpacd) {
         double cma    = 0;
-        for (int i = 0; i < NR_RUNS; i++) {
+        for (unsigned long i = 0; i < nr_runs; i++) {
             unsigned long t0, t1;
 
             unsigned long op = KPAC_OP_PAC;
@@ -198,7 +190,7 @@ int main(int argc, char *argv[0])
             fprintf(out, "%lu\n", diff);
         }
 
-        printf("%g\n", cma);
+        printf("kpacd over %lu runs: %g\n", nr_runs, cma);
     }
 
     return 0;
