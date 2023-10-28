@@ -139,7 +139,7 @@ class Suite:
             b.build(os.path.join(build_log_path, b.name, "build.log"))
 
             with open(os.path.join(build_log_path, b.name, "binary_size"), "w") as f:
-                sp.check_call(["size", b.run_cmd.split()[0]], cwd=b.path, stdout=f)
+                sp.check_call(["size", "-A", b.run_cmd.split()[0]], cwd=b.path, stdout=f)
 
             # Compile stats of this benchmark
             tmp.seek(0)
