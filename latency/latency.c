@@ -35,8 +35,8 @@
     } while (0)
 
 /* Enable in the kernel */
-//#define CNT_REG "PMCCNTR_EL0"
-#define CNT_REG "CNTVCT_EL0"
+#define CNT_REG "PMCCNTR_EL0"
+//#define CNT_REG "CNTVCT_EL0"
 
 static void pac_pl_init()
 {
@@ -72,7 +72,7 @@ int main(int argc, char *argv[0])
     bool pacpl = false;
     bool svc = false;
     bool kpacd = false;
-    bool freq = false;
+    bool freq = true;
 
     while ((opt = getopt(argc, argv, "lsdf")) != -1) {
         switch (opt) {
@@ -81,16 +81,28 @@ int main(int argc, char *argv[0])
         case 'd': kpacd = true; break;
         case 'f': freq = true; break;
         default:
-            fprintf(stderr, "Usage: %s [-lsdf]\n", argv[0]);
+            fprintf(stderr, "Usage: %s [-l|-s|-d] output\n", argv[0]);
             exit(EXIT_FAILURE);
         }
+    }
+
+    if (optind >= argc) {
+        fprintf(stderr, "Usage: %s [-l|-s|-d] output\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    char *filename = argv[optind];
+    FILE *out = fopen(filename, "w");
+    if (!out) {
+        perror("fopen");
+        exit(EXIT_FAILURE);
     }
 
     unsigned long pln = 0x0000DEADBEEFDEAD;
     unsigned long ctx = 0x0000BEEFDEADBEEF;
 
     if (freq)
-        printf("\\drefset{/cntfrq}{%lu}\n", cntfrq());
+        printf("cntfrq: %lu\n", cntfrq());
 
     if (pacpl) {
         pac_pl_init();
@@ -114,17 +126,15 @@ int main(int argc, char *argv[0])
                           : "r" (ctx),  "r" (PAC_PL_BASE));
 
             unsigned long diff = t1 - t0;
+            fprintf(out, "%lu\n", diff);
 
             cma = (diff + (i+1) * cma) / (i+2);
         }
 
-        printf("\\drefset{/pac-pl}{%g}\n", cma);
-    }
-
-    if (svc) {
+        printf("pacpl: %g\n", cma);
+    } else if (svc) {
         double cma    = 0;
         double acc    = 0;
-        double acc_sq = 0;
         for (int i = 0; i < NR_RUNS; i++) {
             unsigned long t0, t1;
 
@@ -153,12 +163,11 @@ int main(int argc, char *argv[0])
             unsigned long diff = t1 - t0;
 
             cma = (diff + (i+1) * cma) / (i+2);
+            fprintf(out, "%lu\n", diff);
         }
 
-        printf("\\drefset{/svc}{%g}\n", cma);
-    }
-
-    if (kpacd) {
+        printf("%g\n", cma);
+    } else if (kpacd) {
         double cma    = 0;
         for (int i = 0; i < NR_RUNS; i++) {
             unsigned long t0, t1;
@@ -171,9 +180,10 @@ int main(int argc, char *argv[0])
                           "stp %3, %4, [%5, #" STR(KPAC_PLAIN) "]\n"
                           "stlr %2, [%5]\n"
 
-                          "sevl\n"
-                          "1: wfe\n"
-                          "ldxr %2, [%5]\n"
+                          //"sevl\n"
+                          //"1: wfe\n"
+                          "1: yield\n"
+                          "ldr %2, [%5]\n"
                           "cbnz %2, 1b\n"
                           "ldr %3, [%5, #" STR(KPAC_CIPHER) "]\n"
 
@@ -185,9 +195,10 @@ int main(int argc, char *argv[0])
             unsigned long diff = t1 - t0;
 
             cma = (diff + (i+1) * cma) / (i+2);
+            fprintf(out, "%lu\n", diff);
         }
 
-        printf("\\drefset{/kpacd}{%g}\n", cma);
+        printf("%g\n", cma);
     }
 
     return 0;

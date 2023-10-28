@@ -22,3 +22,4 @@ __pycache__
 !.gitmodules
 !.dir-locals.el
 !metadata
+/latency/armv8_pmu_cycle_counter_el0

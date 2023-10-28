@@ -1,0 +1,5 @@
+[external "latency/armv8_pmu_cycle_counter_el0"]
+	path = latency/armv8_pmu_cycle_counter_el0
+	url = https://github.com/jerinjacobk/armv8_pmu_cycle_counter_el0.git
+	branch = master
+	vcs = git
