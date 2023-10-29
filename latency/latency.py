@@ -53,7 +53,7 @@ class Latency(Experiment):
     }
 
     outputs = {
-        "samples": File("samples"),
+        "samples": File("samples.npz"),
     }
 
     def run(self):
@@ -66,9 +66,13 @@ class Latency(Experiment):
         }
 
         with working_directory(sys.path[0]):
-            cmd = f"./latency {flag[self.i.variant.value]} -n {self.i.runs.value} {self.o.samples.path}"
+            samples = tempfile.NamedTemporaryFile(mode="r+")
+            cmd = f"./latency {flag[self.i.variant.value]} -n {self.i.runs.value} {samples.name}"
             print(cmd)
             sp.check_call(cmd, shell=True)
+
+            a = np.genfromtxt(samples.name)
+            np.savez_compressed(self.o.samples.path, a)
 
 if __name__ == "__main__":
     experiment = Latency()
