@@ -8,6 +8,7 @@ import tempfile
 import contextlib
 import re
 
+import shutil
 import time
 
 from pprint import pprint
@@ -44,6 +45,7 @@ class Latency(Experiment):
         "variant": String("syscall"),
         "backend": get_backend,
         "runs": Integer(32000000),
+        "csv": Bool(False),
 
         "arch":   lambda self: String(uname().machine),
         "host":   lambda self: String(uname().node),
@@ -54,6 +56,7 @@ class Latency(Experiment):
 
     outputs = {
         "samples": File("samples.npz"),
+        "samples_csv": File("samples.csv"),
     }
 
     def run(self):
@@ -71,8 +74,12 @@ class Latency(Experiment):
             print(cmd)
             sp.check_call(cmd, shell=True)
 
-            a = np.genfromtxt(samples.name)
-            np.savez_compressed(self.o.samples.path, a)
+            if not self.i.csv.value:
+                a = np.genfromtxt(samples.name)
+                np.savez_compressed(self.o.samples.path, a)
+            else:
+                shutil.copyfile(samples.name, self.o.samples_csv.path)
+
 
 if __name__ == "__main__":
     experiment = Latency()
