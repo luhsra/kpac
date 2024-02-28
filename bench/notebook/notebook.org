@@ -27,7 +27,7 @@
       "host": "zynqmp",
       "cflags": "-O2 -mbranch-protection=pac-ret",
       #"cflags": "-O2",
-      "ld_preload": "/root/pac-sw/libkpac/libkpac.so",
+      "ld_preload": "/root/pac-sw/libkpac/libkpac-kpacd.so",
       "libkpac_svc": "0",
       #"ld_preload": "",
       #"variant": "kpacd",
@@ -60,7 +60,7 @@
  'experiment-version': 1,
  'host': 'zynqmp',
  'kernel': 'Linux 6.1.0-kpac-xilinx+ #21 SMP Mon Oct  9 12:50:00 CEST 2023',
- 'ld_preload': '/root/pac-sw/libkpac/libkpac.so',
+ 'ld_preload': '/root/pac-sw/libkpac/libkpac-kpacd.so',
  'libkpac_svc': '0',
  'scope': 'nil',
  'suite': 'cortexsuite',
@@ -161,7 +161,7 @@
 
   pac_raw_old = copy.deepcopy(pac_raw)
 
-  if 'libkpac.so' in exp.metadata['ld_preload']:
+  if 'libkpac' in exp.metadata['ld_preload']:
       for k in pac_raw.keys():
           pac_raw[k] = pac_raw[k] - libkpac_raw[k]['times']
 

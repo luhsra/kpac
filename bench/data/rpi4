@@ -21,7 +21,7 @@ echo 2 | sudo sh -c 'tee /sys/kernel/debug/kpacd/3/cpumask'
 
 # svc virtualization
 env CFLAGS="-mbranch-protection=pac-ret"		\
-    LD_PRELOAD="$PAC_SW/libkpac/libkpac.so"		\
+    LD_PRELOAD="$PAC_SW/libkpac/libkpac-kpacd.so"	\
     LIBKPAC_MODE=svc-only				\
     ../bench.py --suite "$suite"
 
@@ -36,8 +36,8 @@ for scope in strong all; do
     ../bench.py --suite "$suite" --variant kpacd --scope "$scope"
 done
 
-# paravirtualization
+# paravirtualization with kpacd
 env CFLAGS="-mbranch-protection=pac-ret"		\
-    LD_PRELOAD="$PAC_SW/libkpac/libkpac.so"		\
-    LIBKPAC_MODE=kpacd-svc				\
+    LD_PRELOAD="$PAC_SW/libkpac/libkpac-kpacd.so"	\
+    LIBKPAC_MODE=kpac-svc				\
     ../bench.py --suite "$suite"

@@ -13,7 +13,7 @@ env CFLAGS="-O2" ../memtier.py
 env CFLAGS="-O2" ../memtier.py --variant syscall --scope char
 env CFLAGS="-O2" ../memtier.py --variant syscall --scope strong
 env CFLAGS="-O2" ../memtier.py --variant syscall --scope all
-env CFLAGS="-O2 -mbranch-protection=pac-ret" LIBKPAC_MODE=svc-only LD_PRELOAD=../../libkpac/libkpac.so ../memtier.py
+env CFLAGS="-O2 -mbranch-protection=pac-ret" LIBKPAC_MODE=svc-only LD_PRELOAD=../../libkpac/libkpac-kpacd.so ../memtier.py
 
 # KPACD: 1
 
@@ -22,7 +22,7 @@ echo 0-31 | sudo tee /sys/kernel/debug/kpacd/64/cpumask
 env CFLAGS="-O2" ../memtier.py --variant kpacd --scope char
 env CFLAGS="-O2" ../memtier.py --variant kpacd --scope strong
 env CFLAGS="-O2" ../memtier.py --variant kpacd --scope all
-env CFLAGS="-O2 -mbranch-protection=pac-ret" LIBKPAC_MODE=kpacd-svc LD_PRELOAD=../../libkpac/libkpac.so ../memtier.py
+env CFLAGS="-O2 -mbranch-protection=pac-ret" LIBKPAC_MODE=kpac-svc LD_PRELOAD=../../libkpac/libkpac-kpacd.so ../memtier.py
 
 # KPACD: 2
 
@@ -32,7 +32,7 @@ echo 16-31 | sudo tee /sys/kernel/debug/kpacd/72/cpumask
 env CFLAGS="-O2" ../memtier.py --variant kpacd --scope char
 env CFLAGS="-O2" ../memtier.py --variant kpacd --scope strong
 env CFLAGS="-O2" ../memtier.py --variant kpacd --scope all
-env CFLAGS="-O2 -mbranch-protection=pac-ret" LIBKPAC_MODE=kpacd-svc LD_PRELOAD=../../libkpac/libkpac.so ../memtier.py
+env CFLAGS="-O2 -mbranch-protection=pac-ret" LIBKPAC_MODE=kpac-svc LD_PRELOAD=../../libkpac/libkpac-kpacd.so ../memtier.py
 
 # KPACD: 4
 
@@ -44,7 +44,7 @@ echo 24-31 | sudo tee /sys/kernel/debug/kpacd/76/cpumask
 env CFLAGS="-O2" ../memtier.py --variant kpacd --scope char
 env CFLAGS="-O2" ../memtier.py --variant kpacd --scope strong
 env CFLAGS="-O2" ../memtier.py --variant kpacd --scope all
-env CFLAGS="-O2 -mbranch-protection=pac-ret" LIBKPAC_MODE=kpacd-svc LD_PRELOAD=../../libkpac/libkpac.so ../memtier.py
+env CFLAGS="-O2 -mbranch-protection=pac-ret" LIBKPAC_MODE=kpac-svc LD_PRELOAD=../../libkpac/libkpac-kpacd.so ../memtier.py
 
 # KPACD: 8
 
@@ -60,7 +60,7 @@ echo 28-31 | sudo tee /sys/kernel/debug/kpacd/78/cpumask
 env CFLAGS="-O2" ../memtier.py --variant kpacd --scope char
 env CFLAGS="-O2" ../memtier.py --variant kpacd --scope strong
 env CFLAGS="-O2" ../memtier.py --variant kpacd --scope all
-env CFLAGS="-O2 -mbranch-protection=pac-ret" LIBKPAC_MODE=kpacd-svc LD_PRELOAD=../../libkpac/libkpac.so ../memtier.py
+env CFLAGS="-O2 -mbranch-protection=pac-ret" LIBKPAC_MODE=kpac-svc LD_PRELOAD=../../libkpac/libkpac-kpacd.so ../memtier.py
 
 # KPACD: 16
 
@@ -84,4 +84,4 @@ echo 30-31 | sudo tee /sys/kernel/debug/kpacd/79/cpumask
 env CFLAGS="-O2" ../memtier.py --variant kpacd --scope char
 env CFLAGS="-O2" ../memtier.py --variant kpacd --scope strong
 env CFLAGS="-O2" ../memtier.py --variant kpacd --scope all
-env CFLAGS="-O2 -mbranch-protection=pac-ret" LIBKPAC_MODE=kpacd-svc LD_PRELOAD=../../libkpac/libkpac.so ../memtier.py
+env CFLAGS="-O2 -mbranch-protection=pac-ret" LIBKPAC_MODE=kpac-svc LD_PRELOAD=../../libkpac/libkpac-kpacd.so ../memtier.py

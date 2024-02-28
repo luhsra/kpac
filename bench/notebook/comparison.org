@@ -33,11 +33,11 @@
                     'ld_preload': '' }},
         'svc':
         {'query': { 'scope': 'nil',
-                    'ld_preload': '/root/pac-sw/libkpac/libkpac.so',
+                    'ld_preload': '/root/pac-sw/libkpac/libkpac-kpacd.so',
                     'libkpac_svc': '1' }},
         'paravirt':
         {'query': { 'scope': 'nil',
-                    'ld_preload': '/root/pac-sw/libkpac/libkpac.so',
+                    'ld_preload': '/root/pac-sw/libkpac/libkpac-kpacd.so',
                     'libkpac_svc': '0' }},
         'pac-pl (all)':
         {'query': { 'scope': 'all',

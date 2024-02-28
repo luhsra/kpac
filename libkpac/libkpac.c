@@ -37,7 +37,7 @@
 #define NR_VMAS			512
 
 enum {
-    MODE_KPACD_SVC,
+    MODE_KPAC_SVC,
     MODE_SVC_ONLY,
 };
 
@@ -75,7 +75,7 @@ static struct kpac_routine routine_own = {
 static pid_t pid;
 static long page_size;
 
-static unsigned mode = MODE_KPACD_SVC;
+static unsigned mode = MODE_KPAC_SVC;
 
 static struct proc_vma vmas[NR_VMAS];
 static size_t nr_vmas = 0;
@@ -391,8 +391,8 @@ void libkpac_init()
     if (mode_env) {
         if (!strcmp(mode_env, "svc-only"))
             mode = MODE_SVC_ONLY;
-        else if (!strcmp(mode_env, "kpacd-svc"))
-            mode = MODE_KPACD_SVC;
+        else if (!strcmp(mode_env, "kpac-svc"))
+            mode = MODE_KPAC_SVC;
         else
             die("Invalid mode: %s", mode_env);
     }
@@ -426,7 +426,7 @@ void libkpac_init()
 
         /* Skip vdso and ourselves */
         if (strstr(vma->pathname, "[vdso]") ||
-            strstr(vma->pathname, "libkpac.so")) {
+            strstr(vma->pathname, "libkpac")) {
 
             log("[%s] skipping", vma->pathname);
             continue;

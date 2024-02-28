@@ -16,7 +16,7 @@ env CFLAGS="-O2"					\
 
 # svc virtualization
 env CFLAGS="-O2 -mbranch-protection=pac-ret"		\
-    LD_PRELOAD="$HOME/pac-sw/libkpac/libkpac.so"	\
+    LD_PRELOAD="$HOME/pac-sw/libkpac/libkpac-kpacd.so"	\
     LIBKPAC_MODE=svc-only				\
     ../bench.py --suite "$suite"
 
@@ -42,8 +42,15 @@ for scope in char strong all; do
         ../bench.py --suite "$suite" --variant kpacd --scope "$scope"
 done
 
-# paravirtualization
+# paravirtualization with kpacd
 env CFLAGS="-O2 -mbranch-protection=pac-ret"		\
-    LD_PRELOAD="$HOME/pac-sw/libkpac/libkpac.so"	\
-    LIBKPAC_MODE=kpacd-svc				\
+    LD_PRELOAD="$HOME/pac-sw/libkpac/libkpac-kpacd.so"	\
+    LIBKPAC_MODE=kpac-svc				\
     ../bench.py --suite "$suite"
+
+# paravirtualization with pac-pl
+# Note: needs kernel with pac-pl backend
+# env CFLAGS="-mbranch-protection=pac-ret"		\
+#     LD_PRELOAD="$PAC_SW/libkpac/libkpac-pac-pl.so"	\
+#     LIBKPAC_MODE=kpac-svc				\
+#     ../bench.py --suite "$suite"
