@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+set -e
+
+if [ "$(cat /sys/kernel/debug/kpacd/backend)" != "pac-pl" ]; then
+    echo "This measurement needs kernel with pac-pl backend" >&2
+    exit 1
+fi
+
+suite=cortexsuite
+
+taskset -cp 2 $$
+renice -n -20 $$
+
+### Disable kpacd
+echo | tee /sys/kernel/debug/kpacd/*/cpumask
+
+# paravirtualization with pac-pl
+env CFLAGS="-O2 -mbranch-protection=pac-ret"		\
+    LD_PRELOAD="$HOME/pac-sw/pac-pl/pac-pl.so $HOME/pac-sw/libkpac/libkpac-pac-pl.so"	\
+    LIBKPAC_MODE=kpac-svc				\
+    ../bench.py --suite "$suite"

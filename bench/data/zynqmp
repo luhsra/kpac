@@ -47,10 +47,3 @@ env CFLAGS="-O2 -mbranch-protection=pac-ret"		\
     LD_PRELOAD="$HOME/pac-sw/libkpac/libkpac-kpacd.so"	\
     LIBKPAC_MODE=kpac-svc				\
     ../bench.py --suite "$suite"
-
-# paravirtualization with pac-pl
-# Note: needs kernel with pac-pl backend
-# env CFLAGS="-mbranch-protection=pac-ret"		\
-#     LD_PRELOAD="$PAC_SW/libkpac/libkpac-pac-pl.so"	\
-#     LIBKPAC_MODE=kpac-svc				\
-#     ../bench.py --suite "$suite"

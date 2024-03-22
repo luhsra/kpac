@@ -107,7 +107,8 @@ class Benchmark:
 
         nr_pac = get_attr(KPACD_NR_PAC) - nr_pac_0
         nr_aut = get_attr(KPACD_NR_AUT) - nr_aut_0
-        assert nr_pac == nr_aut
+        # assert nr_pac == nr_aut
+        # not true for pacpl
 
         return durs, nr_pac//(self.warmup+self.samples)
 
