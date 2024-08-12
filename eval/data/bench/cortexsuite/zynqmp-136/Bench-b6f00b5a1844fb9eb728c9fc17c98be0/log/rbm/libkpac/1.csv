@@ -1,0 +1,4 @@
+/root/pac-sw/bench/cortexsuite/cortex/rbm/rbm-medium,0.000465916,13,9,13,9
+/usr/lib/aarch64-linux-gnu/libc.so.6,0.005037154,0,0,0,0
+/usr/lib/aarch64-linux-gnu/libm.so.6,0.002393470,0,0,0,0
+/usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1,0.000492739,0,0,0,0

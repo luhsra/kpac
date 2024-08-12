@@ -1,0 +1,1 @@
+{"variant": "kpacd", "backend": "qarma", "runs": 32000000, "arch": "aarch64", "host": "armorix", "kernel": "Linux 6.1.0-kpac-qarma+ #12 SMP Thu Mar 21 15:42:36 CET 2024", "date-start": "2024-03-22 14:04:32.149393", "experiment-name": "Latency", "experiment-version": 1, "experiment-hash": "5e33c77ea5a355aed790d6082dd02f1f", "date-end": "2024-03-22 14:06:04.015907"}

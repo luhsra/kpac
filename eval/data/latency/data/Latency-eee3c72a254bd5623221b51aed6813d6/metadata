@@ -1,0 +1,1 @@
+{"variant": "syscall", "backend": "nop", "runs": 32000000, "arch": "aarch64", "host": "armorix", "kernel": "Linux 6.1.0-kpac-nop+ #9 SMP Sat Oct 28 13:40:59 CEST 2023", "date-start": "2023-10-29 15:34:54.350818", "experiment-name": "Latency", "experiment-version": 1, "experiment-hash": "eee3c72a254bd5623221b51aed6813d6", "date-end": "2023-10-29 15:35:41.199225"}

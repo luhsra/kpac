@@ -1,0 +1,1 @@
+{"variant": "syscall", "backend": "siphash", "runs": 32000000, "arch": "aarch64", "host": "zynqmp", "kernel": "Linux 6.1.0-kpac-xilinx-siphash+ #69 SMP Sat Oct 28 15:27:34 CEST 2023", "date-start": "2023-10-28 15:53:58.936501", "experiment-name": "Latency", "experiment-version": 1, "experiment-hash": "641a602bffc07f70032bbc6b39ae71b7", "date-end": "2023-10-28 15:55:24.153041"}

@@ -1,0 +1,22 @@
+rm rbm-small rbm-medium rbm-large out.txt
+gcc -O2 -fplugin=/root/pac-sw/bench/../gcc/pac_sw_plugin.so -fplugin-arg-pac_sw_plugin-asm=/root/pac-sw/bench/../gcc/asm/kpacd/aarch64 -fplugin-arg-pac_sw_plugin-scope=strong -fplugin-arg-pac_sw_plugin-dump=/tmp/tmpt37j8iq3 -I/root/pac-sw/bench/cortexsuite/cortex/rbm/includes -I/root/pac-sw/bench/cortexsuite/cortex/rbm /root/pac-sw/bench/cortexsuite/cortex/rbm/main.c /root/pac-sw/bench/cortexsuite/cortex/rbm/twister.c /root/pac-sw/bench/cortexsuite/cortex/rbm/includes/photonTiming.c -DUSERS=10 -DTEST_USERS=10 -DMOVIES=10 -DLOOPS=20 -o rbm-small -lm
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/rbm/main.c: activateHiddenUnits instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/rbm/main.c: activateVisibleUnits instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/rbm/main.c: train instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/rbm/main.c: processLine instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/rbm/main.c: main instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/rbm/twister.c: genrand_int32 instrumented.
+gcc -O2 -fplugin=/root/pac-sw/bench/../gcc/pac_sw_plugin.so -fplugin-arg-pac_sw_plugin-asm=/root/pac-sw/bench/../gcc/asm/kpacd/aarch64 -fplugin-arg-pac_sw_plugin-scope=strong -fplugin-arg-pac_sw_plugin-dump=/tmp/tmpt37j8iq3 -I/root/pac-sw/bench/cortexsuite/cortex/rbm/includes -I/root/pac-sw/bench/cortexsuite/cortex/rbm /root/pac-sw/bench/cortexsuite/cortex/rbm/main.c /root/pac-sw/bench/cortexsuite/cortex/rbm/twister.c /root/pac-sw/bench/cortexsuite/cortex/rbm/includes/photonTiming.c -DUSERS=100 -DTEST_USERS=100 -DMOVIES=100 -DLOOPS=20 -o rbm-medium -lm
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/rbm/main.c: activateHiddenUnits instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/rbm/main.c: activateVisibleUnits instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/rbm/main.c: train instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/rbm/main.c: processLine instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/rbm/main.c: main instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/rbm/twister.c: genrand_int32 instrumented.
+gcc -O2 -fplugin=/root/pac-sw/bench/../gcc/pac_sw_plugin.so -fplugin-arg-pac_sw_plugin-asm=/root/pac-sw/bench/../gcc/asm/kpacd/aarch64 -fplugin-arg-pac_sw_plugin-scope=strong -fplugin-arg-pac_sw_plugin-dump=/tmp/tmpt37j8iq3 -I/root/pac-sw/bench/cortexsuite/cortex/rbm/includes -I/root/pac-sw/bench/cortexsuite/cortex/rbm /root/pac-sw/bench/cortexsuite/cortex/rbm/main.c /root/pac-sw/bench/cortexsuite/cortex/rbm/twister.c /root/pac-sw/bench/cortexsuite/cortex/rbm/includes/photonTiming.c -DUSERS=100 -DTEST_USERS=100 -DMOVIES=100 -DLOOPS=200 -o rbm-large -lm
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/rbm/main.c: activateHiddenUnits instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/rbm/main.c: activateVisibleUnits instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/rbm/main.c: train instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/rbm/main.c: processLine instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/rbm/main.c: main instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/rbm/twister.c: genrand_int32 instrumented.

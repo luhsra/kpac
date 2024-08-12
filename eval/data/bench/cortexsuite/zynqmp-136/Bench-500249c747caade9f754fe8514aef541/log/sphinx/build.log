@@ -1,0 +1,8 @@
+rm out.txt sphinx
+rm: cannot remove 'out.txt': No such file or directory
+make: [Makefile:18: clean] Error 1 (ignored)
+gcc -O2 -mbranch-protection=pac-ret -I includes main.c includes/*.c pocketsphinx/*.c sphinxbase/fe/*.c sphinxbase/feat/*.c sphinxbase/lm/*.c sphinxbase/util/*.c -o sphinx -lm
+sphinxbase/lm/jsgf.c: In function ‘jsgf_parse_file’:
+sphinxbase/lm/jsgf.c:755:12: warning: implicit declaration of function ‘yyparse’ [-Wimplicit-function-declaration]
+  755 |     yyrv = yyparse(yyscanner, jsgf);
+      |            ^~~~~~~

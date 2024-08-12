@@ -1,0 +1,2 @@
+rm a.out
+gcc -O2 -I/root/pac-sw/bench/cortexsuite/cortex/svd3/includes -I/root/pac-sw/bench/cortexsuite/cortex/svd3 -lm main.c common/*.c /root/pac-sw/bench/cortexsuite/cortex/svd3/includes/photonTiming.c svd.c svd2.c sortSVDResult.c -lm

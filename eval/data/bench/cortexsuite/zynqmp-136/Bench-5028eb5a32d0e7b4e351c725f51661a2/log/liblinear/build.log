@@ -1,0 +1,113 @@
+make -C blas clean
+make[1]: Entering directory '/root/pac-sw/bench/cortexsuite/cortex/liblinear/blas'
+rm -f *.o
+rm -f *.a
+rm -f *~
+make[1]: Leaving directory '/root/pac-sw/bench/cortexsuite/cortex/liblinear/blas'
+rm -f *~ tron.o linear.o train liblinear.so.1 liblinear-tsmall liblinear-tmedium liblinear-tlarge
+make -C blas OPTFLAGS='-O2 -mbranch-protection=pac-ret' CC='cc'
+make[1]: Entering directory '/root/pac-sw/bench/cortexsuite/cortex/liblinear/blas'
+cc -O2 -mbranch-protection=pac-ret -c dnrm2.c -lm
+cc -O2 -mbranch-protection=pac-ret -c daxpy.c -lm
+cc -O2 -mbranch-protection=pac-ret -c ddot.c -lm
+cc -O2 -mbranch-protection=pac-ret -c dscal.c -lm
+ar rcv blas.a dnrm2.o daxpy.o ddot.o dscal.o   
+a - dnrm2.o
+a - daxpy.o
+a - ddot.o
+a - dscal.o
+ranlib  blas.a
+make[1]: Leaving directory '/root/pac-sw/bench/cortexsuite/cortex/liblinear/blas'
+cc -O2 -mbranch-protection=pac-ret -I/root/pac-sw/bench/cortexsuite/cortex/liblinear/includes -I/root/pac-sw/bench/cortexsuite/cortex/liblinear /root/pac-sw/bench/cortexsuite/cortex/liblinear/linear.c /root/pac-sw/bench/cortexsuite/cortex/liblinear/train.c /root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c /root/pac-sw/bench/cortexsuite/cortex/liblinear/includes/photonTiming.c blas/blas.a -O2 -mbranch-protection=pac-ret -o liblinear-tsmall -lm
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/linear.c: In function ‘transpose.constprop’:
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/linear.c:2345:41: warning: argument 1 range [18446744039349813248, 18446744073709551600] exceeds maximum object size 9223372036854775807 [-Walloc-size-larger-than=]
+ 2345 |         x_space = (struct feature_node*)malloc((nnz+n)*sizeof(struct feature_node));
+      |                                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /root/pac-sw/bench/cortexsuite/cortex/liblinear/linear.c:3:
+/usr/include/stdlib.h:553:14: note: in a call to allocation function ‘malloc’ declared here
+  553 | extern void *malloc (size_t __size) __THROW __attribute_malloc__
+      |              ^~~~~~
+In file included from /root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c:6:
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.h:8:61: warning: ‘struct tagl2r_lr_fun’ declared inside parameter list will not be visible outside of this definition or declaration
+    8 |         void (*constructor)(struct tagTRON_l2r_lr *, struct tagl2r_lr_fun *fun_obj, double eps, int max_iter);
+      |                                                             ^~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.h:32:69: warning: ‘struct tagl2r_l2_svc_fun’ declared inside parameter list will not be visible outside of this definition or declaration
+   32 |         void (*constructor)(struct tagTRON_l2r_l2_svc *this, struct tagl2r_l2_svc_fun *fun_obj, double eps, int max_iter);
+      |                                                                     ^~~~~~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.h:56:69: warning: ‘struct tagl2r_l2_svr_fun’ declared inside parameter list will not be visible outside of this definition or declaration
+   56 |         void (*constructor)(struct tagTRON_l2r_l2_svr *this, struct tagl2r_l2_svr_fun *fun_obj, double eps, int max_iter);
+      |                                                                     ^~~~~~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c: In function ‘TRON_initialise_l2r_lr’:
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c:256:27: warning: assignment to ‘void (*)(struct tagTRON_l2r_lr *, struct tagl2r_lr_fun *, double,  int)’ from incompatible pointer type ‘void (*)(struct tagTRON_l2r_lr *, struct tagl2r_lr_fun *, double,  int)’ [-Wincompatible-pointer-types]
+  256 |         this->constructor = &TRON_constructor_l2r_lr;
+      |                           ^
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c: In function ‘TRON_initialise_l2r_l2_svc’:
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c:490:27: warning: assignment to ‘void (*)(struct tagTRON_l2r_l2_svc *, struct tagl2r_l2_svc_fun *, double,  int)’ from incompatible pointer type ‘void (*)(struct tagTRON_l2r_l2_svc *, struct tagl2r_l2_svc_fun *, double,  int)’ [-Wincompatible-pointer-types]
+  490 |         this->constructor = &TRON_constructor_l2r_l2_svc;
+      |                           ^
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c: In function ‘TRON_initialise_l2r_l2_svr’:
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c:723:27: warning: assignment to ‘void (*)(struct tagTRON_l2r_l2_svr *, struct tagl2r_l2_svr_fun *, double,  int)’ from incompatible pointer type ‘void (*)(struct tagTRON_l2r_l2_svr *, struct tagl2r_l2_svr_fun *, double,  int)’ [-Wincompatible-pointer-types]
+  723 |         this->constructor = &TRON_constructor_l2r_l2_svr;
+      |                           ^
+cc -O2 -mbranch-protection=pac-ret -I/root/pac-sw/bench/cortexsuite/cortex/liblinear/includes -I/root/pac-sw/bench/cortexsuite/cortex/liblinear /root/pac-sw/bench/cortexsuite/cortex/liblinear/linear.c /root/pac-sw/bench/cortexsuite/cortex/liblinear/train.c /root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c /root/pac-sw/bench/cortexsuite/cortex/liblinear/includes/photonTiming.c blas/blas.a -O2 -mbranch-protection=pac-ret -o liblinear-tmedium -lm
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/linear.c: In function ‘transpose.constprop’:
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/linear.c:2345:41: warning: argument 1 range [18446744039349813248, 18446744073709551600] exceeds maximum object size 9223372036854775807 [-Walloc-size-larger-than=]
+ 2345 |         x_space = (struct feature_node*)malloc((nnz+n)*sizeof(struct feature_node));
+      |                                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /root/pac-sw/bench/cortexsuite/cortex/liblinear/linear.c:3:
+/usr/include/stdlib.h:553:14: note: in a call to allocation function ‘malloc’ declared here
+  553 | extern void *malloc (size_t __size) __THROW __attribute_malloc__
+      |              ^~~~~~
+In file included from /root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c:6:
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.h:8:61: warning: ‘struct tagl2r_lr_fun’ declared inside parameter list will not be visible outside of this definition or declaration
+    8 |         void (*constructor)(struct tagTRON_l2r_lr *, struct tagl2r_lr_fun *fun_obj, double eps, int max_iter);
+      |                                                             ^~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.h:32:69: warning: ‘struct tagl2r_l2_svc_fun’ declared inside parameter list will not be visible outside of this definition or declaration
+   32 |         void (*constructor)(struct tagTRON_l2r_l2_svc *this, struct tagl2r_l2_svc_fun *fun_obj, double eps, int max_iter);
+      |                                                                     ^~~~~~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.h:56:69: warning: ‘struct tagl2r_l2_svr_fun’ declared inside parameter list will not be visible outside of this definition or declaration
+   56 |         void (*constructor)(struct tagTRON_l2r_l2_svr *this, struct tagl2r_l2_svr_fun *fun_obj, double eps, int max_iter);
+      |                                                                     ^~~~~~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c: In function ‘TRON_initialise_l2r_lr’:
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c:256:27: warning: assignment to ‘void (*)(struct tagTRON_l2r_lr *, struct tagl2r_lr_fun *, double,  int)’ from incompatible pointer type ‘void (*)(struct tagTRON_l2r_lr *, struct tagl2r_lr_fun *, double,  int)’ [-Wincompatible-pointer-types]
+  256 |         this->constructor = &TRON_constructor_l2r_lr;
+      |                           ^
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c: In function ‘TRON_initialise_l2r_l2_svc’:
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c:490:27: warning: assignment to ‘void (*)(struct tagTRON_l2r_l2_svc *, struct tagl2r_l2_svc_fun *, double,  int)’ from incompatible pointer type ‘void (*)(struct tagTRON_l2r_l2_svc *, struct tagl2r_l2_svc_fun *, double,  int)’ [-Wincompatible-pointer-types]
+  490 |         this->constructor = &TRON_constructor_l2r_l2_svc;
+      |                           ^
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c: In function ‘TRON_initialise_l2r_l2_svr’:
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c:723:27: warning: assignment to ‘void (*)(struct tagTRON_l2r_l2_svr *, struct tagl2r_l2_svr_fun *, double,  int)’ from incompatible pointer type ‘void (*)(struct tagTRON_l2r_l2_svr *, struct tagl2r_l2_svr_fun *, double,  int)’ [-Wincompatible-pointer-types]
+  723 |         this->constructor = &TRON_constructor_l2r_l2_svr;
+      |                           ^
+cc -O2 -mbranch-protection=pac-ret -I/root/pac-sw/bench/cortexsuite/cortex/liblinear/includes -I/root/pac-sw/bench/cortexsuite/cortex/liblinear /root/pac-sw/bench/cortexsuite/cortex/liblinear/linear.c /root/pac-sw/bench/cortexsuite/cortex/liblinear/train.c /root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c /root/pac-sw/bench/cortexsuite/cortex/liblinear/includes/photonTiming.c blas/blas.a -O2 -mbranch-protection=pac-ret -o liblinear-tlarge -lm
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/linear.c: In function ‘transpose.constprop’:
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/linear.c:2345:41: warning: argument 1 range [18446744039349813248, 18446744073709551600] exceeds maximum object size 9223372036854775807 [-Walloc-size-larger-than=]
+ 2345 |         x_space = (struct feature_node*)malloc((nnz+n)*sizeof(struct feature_node));
+      |                                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /root/pac-sw/bench/cortexsuite/cortex/liblinear/linear.c:3:
+/usr/include/stdlib.h:553:14: note: in a call to allocation function ‘malloc’ declared here
+  553 | extern void *malloc (size_t __size) __THROW __attribute_malloc__
+      |              ^~~~~~
+In file included from /root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c:6:
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.h:8:61: warning: ‘struct tagl2r_lr_fun’ declared inside parameter list will not be visible outside of this definition or declaration
+    8 |         void (*constructor)(struct tagTRON_l2r_lr *, struct tagl2r_lr_fun *fun_obj, double eps, int max_iter);
+      |                                                             ^~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.h:32:69: warning: ‘struct tagl2r_l2_svc_fun’ declared inside parameter list will not be visible outside of this definition or declaration
+   32 |         void (*constructor)(struct tagTRON_l2r_l2_svc *this, struct tagl2r_l2_svc_fun *fun_obj, double eps, int max_iter);
+      |                                                                     ^~~~~~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.h:56:69: warning: ‘struct tagl2r_l2_svr_fun’ declared inside parameter list will not be visible outside of this definition or declaration
+   56 |         void (*constructor)(struct tagTRON_l2r_l2_svr *this, struct tagl2r_l2_svr_fun *fun_obj, double eps, int max_iter);
+      |                                                                     ^~~~~~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c: In function ‘TRON_initialise_l2r_lr’:
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c:256:27: warning: assignment to ‘void (*)(struct tagTRON_l2r_lr *, struct tagl2r_lr_fun *, double,  int)’ from incompatible pointer type ‘void (*)(struct tagTRON_l2r_lr *, struct tagl2r_lr_fun *, double,  int)’ [-Wincompatible-pointer-types]
+  256 |         this->constructor = &TRON_constructor_l2r_lr;
+      |                           ^
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c: In function ‘TRON_initialise_l2r_l2_svc’:
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c:490:27: warning: assignment to ‘void (*)(struct tagTRON_l2r_l2_svc *, struct tagl2r_l2_svc_fun *, double,  int)’ from incompatible pointer type ‘void (*)(struct tagTRON_l2r_l2_svc *, struct tagl2r_l2_svc_fun *, double,  int)’ [-Wincompatible-pointer-types]
+  490 |         this->constructor = &TRON_constructor_l2r_l2_svc;
+      |                           ^
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c: In function ‘TRON_initialise_l2r_l2_svr’:
+/root/pac-sw/bench/cortexsuite/cortex/liblinear/tron.c:723:27: warning: assignment to ‘void (*)(struct tagTRON_l2r_l2_svr *, struct tagl2r_l2_svr_fun *, double,  int)’ from incompatible pointer type ‘void (*)(struct tagTRON_l2r_l2_svr *, struct tagl2r_l2_svr_fun *, double,  int)’ [-Wincompatible-pointer-types]
+  723 |         this->constructor = &TRON_constructor_l2r_l2_svr;
+      |                           ^

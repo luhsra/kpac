@@ -1,0 +1,22 @@
+rm -f *.o spc-small spc-medium spc-large
+gcc -O2 -fplugin=/root/pac-sw/bench/../gcc/pac_sw_plugin.so -fplugin-arg-pac_sw_plugin-asm=/root/pac-sw/bench/../gcc/asm/syscall/aarch64 -fplugin-arg-pac_sw_plugin-scope=strong -fplugin-arg-pac_sw_plugin-dump=/tmp/tmpi0ebw2z9 -I/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/includes -I/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/eigen.c /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/kmeans.c /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/includes/photonTiming.c -O2 -fplugin=/root/pac-sw/bench/../gcc/pac_sw_plugin.so -fplugin-arg-pac_sw_plugin-asm=/root/pac-sw/bench/../gcc/asm/syscall/aarch64 -fplugin-arg-pac_sw_plugin-scope=strong -fplugin-arg-pac_sw_plugin-dump=/tmp/tmpi0ebw2z9 -o spc-small -lm
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/kmeans.c: k_means instrumented.
+/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c: In function ‘main’:
+/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c:166:9: warning: implicit declaration of function ‘eigen’ [-Wimplicit-function-declaration]
+  166 |         eigen(A, ev, n);
+      |         ^~~~~
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c: main instrumented.
+gcc -O2 -fplugin=/root/pac-sw/bench/../gcc/pac_sw_plugin.so -fplugin-arg-pac_sw_plugin-asm=/root/pac-sw/bench/../gcc/asm/syscall/aarch64 -fplugin-arg-pac_sw_plugin-scope=strong -fplugin-arg-pac_sw_plugin-dump=/tmp/tmpi0ebw2z9 -I/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/includes -I/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/eigen.c /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/kmeans.c /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/includes/photonTiming.c -O2 -fplugin=/root/pac-sw/bench/../gcc/pac_sw_plugin.so -fplugin-arg-pac_sw_plugin-asm=/root/pac-sw/bench/../gcc/asm/syscall/aarch64 -fplugin-arg-pac_sw_plugin-scope=strong -fplugin-arg-pac_sw_plugin-dump=/tmp/tmpi0ebw2z9 -o spc-medium -lm
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/kmeans.c: k_means instrumented.
+/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c: In function ‘main’:
+/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c:166:9: warning: implicit declaration of function ‘eigen’ [-Wimplicit-function-declaration]
+  166 |         eigen(A, ev, n);
+      |         ^~~~~
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c: main instrumented.
+gcc -O2 -fplugin=/root/pac-sw/bench/../gcc/pac_sw_plugin.so -fplugin-arg-pac_sw_plugin-asm=/root/pac-sw/bench/../gcc/asm/syscall/aarch64 -fplugin-arg-pac_sw_plugin-scope=strong -fplugin-arg-pac_sw_plugin-dump=/tmp/tmpi0ebw2z9 -I/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/includes -I/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/eigen.c /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/kmeans.c /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/includes/photonTiming.c -O2 -fplugin=/root/pac-sw/bench/../gcc/pac_sw_plugin.so -fplugin-arg-pac_sw_plugin-asm=/root/pac-sw/bench/../gcc/asm/syscall/aarch64 -fplugin-arg-pac_sw_plugin-scope=strong -fplugin-arg-pac_sw_plugin-dump=/tmp/tmpi0ebw2z9 -o spc-large -lm
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/kmeans.c: k_means instrumented.
+/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c: In function ‘main’:
+/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c:166:9: warning: implicit declaration of function ‘eigen’ [-Wimplicit-function-declaration]
+  166 |         eigen(A, ev, n);
+      |         ^~~~~
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c: main instrumented.

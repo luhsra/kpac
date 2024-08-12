@@ -1,0 +1,1 @@
+{"variant": "kpacd", "backend": "nop", "runs": 32000000, "arch": "aarch64", "host": "zynqmp", "kernel": "Linux 6.1.0-kpac-xilinx-nop+ #70 SMP Sat Oct 28 15:33:39 CEST 2023", "date-start": "2023-10-28 13:37:55.520358", "experiment-name": "Latency", "experiment-version": 1, "experiment-hash": "76e5750559189f93fdb1a923a0a241c4", "date-end": "2023-10-28 13:38:21.010001"}

@@ -1,0 +1,1 @@
+{"variant": "syscall", "backend": "siphash", "runs": 32000000, "arch": "aarch64", "host": "rpi4", "kernel": "Linux 6.1.54-v8-kpac-nop+ #26 SMP PREEMPT Sat Oct 28 16:46:12 CEST 2023", "date-start": "2023-10-28 15:48:09.670731", "experiment-name": "Latency", "experiment-version": 1, "experiment-hash": "b859261758db68612e74e8e398c8ef35", "date-end": "2023-10-28 15:49:06.394121"}

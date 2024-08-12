@@ -1,0 +1,4 @@
+/root/pac-sw/bench/cortexsuite/cortex/motion-estimation/me-large,0.000477047,9,8,13,12
+/usr/lib/aarch64-linux-gnu/libc.so.6,0.005091848,0,0,0,0
+/root/pac-sw/pac-pl/pac-pl.so,0.000063337,0,0,0,0
+/usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1,0.000547285,0,0,0,0

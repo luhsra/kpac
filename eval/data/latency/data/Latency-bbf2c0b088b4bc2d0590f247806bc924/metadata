@@ -1,0 +1,1 @@
+{"variant": "syscall", "backend": "siphash", "runs": 32000000, "arch": "aarch64", "host": "armorix", "kernel": "Linux 6.1.0-kpac-siphash+ #10 SMP Sat Oct 28 15:06:07 CEST 2023", "date-start": "2023-10-29 15:41:16.024768", "experiment-name": "Latency", "experiment-version": 1, "experiment-hash": "bbf2c0b088b4bc2d0590f247806bc924", "date-end": "2023-10-29 15:42:03.521326"}

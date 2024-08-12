@@ -1,0 +1,1 @@
+{"variant": "syscall", "backend": "qarma", "runs": 32000000, "arch": "aarch64", "host": "armorix", "kernel": "Linux 6.1.0-kpac-qarma+ #12 SMP Thu Mar 21 15:42:36 CET 2024", "date-start": "2024-03-22 14:03:07.326108", "experiment-name": "Latency", "experiment-version": 1, "experiment-hash": "0430d0d8a40c51017ff5bbc483d7b1d7", "date-end": "2024-03-22 14:04:32.002662"}

@@ -1,0 +1,5 @@
+/root/pac-sw/bench/cortexsuite/cortex/sphinx/sphinx,0.008182908,640,627,915,902
+/usr/lib/aarch64-linux-gnu/libc.so.6,0.005083317,0,0,0,0
+/usr/lib/aarch64-linux-gnu/libm.so.6,0.002335023,0,0,0,0
+/root/pac-sw/pac-pl/pac-pl.so,0.000064857,0,0,0,0
+/usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1,0.000560076,0,0,0,0

@@ -1,0 +1,4 @@
+/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spc-small,0.000366937,9,0,9,0
+/usr/lib/aarch64-linux-gnu/libc.so.6,0.005082097,0,0,0,0
+/usr/lib/aarch64-linux-gnu/libm.so.6,0.002456015,0,0,0,0
+/usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1,0.000435334,0,0,0,0

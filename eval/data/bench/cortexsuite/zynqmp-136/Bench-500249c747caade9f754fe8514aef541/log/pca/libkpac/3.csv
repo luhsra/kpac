@@ -1,0 +1,5 @@
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca-small,0.000489999,9,9,9,9
+/usr/lib/aarch64-linux-gnu/libc.so.6,0.005096809,0,0,0,0
+/usr/lib/aarch64-linux-gnu/libm.so.6,0.002333353,0,0,0,0
+/root/pac-sw/pac-pl/pac-pl.so,0.000061606,0,0,0,0
+/usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1,0.000577058,0,0,0,0

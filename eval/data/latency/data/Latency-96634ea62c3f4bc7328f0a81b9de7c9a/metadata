@@ -1,0 +1,1 @@
+{"variant": "kpacd", "backend": "nop", "runs": 32000000, "arch": "aarch64", "host": "rpi4", "kernel": "Linux 6.1.54-v8-kpac-nop+ #25 SMP PREEMPT Sat Oct 28 16:20:02 CEST 2023", "date-start": "2023-10-28 15:45:02.626913", "experiment-name": "Latency", "experiment-version": 1, "experiment-hash": "96634ea62c3f4bc7328f0a81b9de7c9a", "date-end": "2023-10-28 15:45:17.427754"}

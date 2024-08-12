@@ -1,0 +1,31 @@
+rm -f *.o me-small me-medium me-large
+gcc -O2 -fplugin=/root/pac-sw/bench/../gcc/pac_sw_plugin.so -fplugin-arg-pac_sw_plugin-asm=/root/pac-sw/bench/../gcc/asm/kpacd/aarch64 -fplugin-arg-pac_sw_plugin-scope=all -fplugin-arg-pac_sw_plugin-dump=/tmp/tmpn2iy4wvt -I/root/pac-sw/bench/cortexsuite/cortex/motion-estimation/includes -I/root/pac-sw/bench/cortexsuite/cortex/motion-estimation /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/App.c /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/BmpHandler.c /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/FullSearch.c /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/Motion_Estimation.c /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/includes/photonTiming.c -DSYNTHETIC1 -O2 -fplugin=/root/pac-sw/bench/../gcc/pac_sw_plugin.so -fplugin-arg-pac_sw_plugin-asm=/root/pac-sw/bench/../gcc/asm/kpacd/aarch64 -fplugin-arg-pac_sw_plugin-scope=all -fplugin-arg-pac_sw_plugin-dump=/tmp/tmpn2iy4wvt -o me-small -lm
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/App.c: LoadLR instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/App.c: Bidirectional_ME instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/App.c: main instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/BmpHandler.c: LoadBitmapFile instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/BmpHandler.c: ConvertGrayScaletoRGB instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/BmpHandler.c: WriteBMPFile instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/FullSearch.c: Taylor_App instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/FullSearch.c: FullSearch instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/Motion_Estimation.c: Motion_Est instrumented.
+gcc -O2 -fplugin=/root/pac-sw/bench/../gcc/pac_sw_plugin.so -fplugin-arg-pac_sw_plugin-asm=/root/pac-sw/bench/../gcc/asm/kpacd/aarch64 -fplugin-arg-pac_sw_plugin-scope=all -fplugin-arg-pac_sw_plugin-dump=/tmp/tmpn2iy4wvt -I/root/pac-sw/bench/cortexsuite/cortex/motion-estimation/includes -I/root/pac-sw/bench/cortexsuite/cortex/motion-estimation /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/App.c /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/BmpHandler.c /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/FullSearch.c /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/Motion_Estimation.c /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/includes/photonTiming.c -DALPACA -O2 -fplugin=/root/pac-sw/bench/../gcc/pac_sw_plugin.so -fplugin-arg-pac_sw_plugin-asm=/root/pac-sw/bench/../gcc/asm/kpacd/aarch64 -fplugin-arg-pac_sw_plugin-scope=all -fplugin-arg-pac_sw_plugin-dump=/tmp/tmpn2iy4wvt -o me-medium -lm
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/App.c: LoadLR instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/App.c: Bidirectional_ME instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/App.c: main instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/BmpHandler.c: LoadBitmapFile instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/BmpHandler.c: ConvertGrayScaletoRGB instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/BmpHandler.c: WriteBMPFile instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/FullSearch.c: Taylor_App instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/FullSearch.c: FullSearch instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/Motion_Estimation.c: Motion_Est instrumented.
+gcc -O2 -fplugin=/root/pac-sw/bench/../gcc/pac_sw_plugin.so -fplugin-arg-pac_sw_plugin-asm=/root/pac-sw/bench/../gcc/asm/kpacd/aarch64 -fplugin-arg-pac_sw_plugin-scope=all -fplugin-arg-pac_sw_plugin-dump=/tmp/tmpn2iy4wvt -I/root/pac-sw/bench/cortexsuite/cortex/motion-estimation/includes -I/root/pac-sw/bench/cortexsuite/cortex/motion-estimation /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/App.c /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/BmpHandler.c /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/FullSearch.c /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/Motion_Estimation.c /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/includes/photonTiming.c -DBOOKCASE -O2 -fplugin=/root/pac-sw/bench/../gcc/pac_sw_plugin.so -fplugin-arg-pac_sw_plugin-asm=/root/pac-sw/bench/../gcc/asm/kpacd/aarch64 -fplugin-arg-pac_sw_plugin-scope=all -fplugin-arg-pac_sw_plugin-dump=/tmp/tmpn2iy4wvt -o me-large -lm
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/App.c: LoadLR instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/App.c: Bidirectional_ME instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/App.c: main instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/BmpHandler.c: LoadBitmapFile instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/BmpHandler.c: ConvertGrayScaletoRGB instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/BmpHandler.c: WriteBMPFile instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/FullSearch.c: Taylor_App instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/FullSearch.c: FullSearch instrumented.
+pac_sw_plugin: /root/pac-sw/bench/cortexsuite/cortex/motion-estimation/Motion_Estimation.c: Motion_Est instrumented.

@@ -1,0 +1,1 @@
+{"variant": "kpacd", "backend": "siphash", "runs": 32000000, "arch": "aarch64", "host": "rpi4", "kernel": "Linux 6.1.54-v8-kpac-nop+ #26 SMP PREEMPT Sat Oct 28 16:46:12 CEST 2023", "date-start": "2023-10-28 15:49:06.946456", "experiment-name": "Latency", "experiment-version": 1, "experiment-hash": "fbec6cab14144bd927497f6b057c952c", "date-end": "2023-10-28 15:49:23.142238"}

@@ -1,0 +1,1 @@
+{"variant": "kpacd", "backend": "siphash", "runs": 32000000, "arch": "aarch64", "host": "armorix", "kernel": "Linux 6.1.0-kpac-siphash+ #10 SMP Sat Oct 28 15:06:07 CEST 2023", "date-start": "2023-10-29 15:42:03.686712", "experiment-name": "Latency", "experiment-version": 1, "experiment-hash": "7f803248fb359278d73452d0cc3d7b5e", "date-end": "2023-10-29 15:43:00.621023"}

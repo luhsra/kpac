@@ -1,0 +1,11 @@
+name,inst,total,auths
+liblinear,18,280,6
+kmeans,6,24,2
+spectral,6,45,2
+lda,21,111,125173
+motion-estimation,3,45,1
+pca,0,45,0
+rbm,0,54,0
+sphinx,86,871,2890665
+srr,3,108,1
+svd3,5,77,3

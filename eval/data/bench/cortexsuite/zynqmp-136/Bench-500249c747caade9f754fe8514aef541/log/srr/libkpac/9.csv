@@ -1,0 +1,4 @@
+/root/pac-sw/bench/cortexsuite/cortex/srr/srr-small,0.000642774,18,12,21,18
+/usr/lib/aarch64-linux-gnu/libc.so.6,0.005087588,0,0,0,0
+/root/pac-sw/pac-pl/pac-pl.so,0.000062636,0,0,0,0
+/usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1,0.000435383,0,0,0,0

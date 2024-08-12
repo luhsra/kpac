@@ -1,0 +1,91 @@
+rm -f *.o pca-small pca-medium pca-large
+gcc -O2 -I/root/pac-sw/bench/cortexsuite/cortex/pca/includes -I/root/pac-sw/bench/cortexsuite/cortex/pca /root/pac-sw/bench/cortexsuite/cortex/pca/pca.c /root/pac-sw/bench/cortexsuite/cortex/pca/includes/photonTiming.c -O2 -o pca-small -lm
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c: In function ‘free_vector’:
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:481:4: warning: ‘free’ called on pointer ‘v’ with nonzero offset 4 [-Wfree-nonheap-object]
+  481 |    free((char*) (v+1));
+      |    ^~~~~~~~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c: In function ‘free_matrix’:
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:495:8: warning: ‘free’ called on pointer ‘*(float **)((char *)mat+ ivtmp*8)’ with nonzero offset 4 [-Wfree-nonheap-object]
+  495 |        free ((char*) (mat[i]+1));
+      |        ^~~~~~~~~~~~~~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:497:4: warning: ‘free’ called on pointer ‘mat’ with nonzero offset 8 [-Wfree-nonheap-object]
+  497 |    free ((char*) (mat+1));
+      |    ^~~~~~~~~~~~~~~~~~~~~~
+In function ‘free_vector’,
+    inlined from ‘main’ at /root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:242:5:
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:481:4: warning: ‘free’ called on pointer ‘evals’ with nonzero offset 4 [-Wfree-nonheap-object]
+  481 |    free((char*) (v+1));
+      |    ^~~~~~~~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c: In function ‘main’:
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:167:13: note: returned from ‘vector’
+  167 |     evals = vector(m);     /* Storage alloc. for vector of eigenvalues */
+      |             ^~~~~~~~~
+In function ‘free_vector’,
+    inlined from ‘main’ at /root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:243:5:
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:481:4: warning: ‘free’ called on pointer ‘interm’ with nonzero offset 4 [-Wfree-nonheap-object]
+  481 |    free((char*) (v+1));
+      |    ^~~~~~~~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c: In function ‘main’:
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:168:14: note: returned from ‘vector’
+  168 |     interm = vector(m);    /* Storage alloc. for 'intermediate' vector */
+      |              ^~~~~~~~~
+gcc -O2 -I/root/pac-sw/bench/cortexsuite/cortex/pca/includes -I/root/pac-sw/bench/cortexsuite/cortex/pca /root/pac-sw/bench/cortexsuite/cortex/pca/pca.c /root/pac-sw/bench/cortexsuite/cortex/pca/includes/photonTiming.c -O2 -o pca-medium -lm
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c: In function ‘free_vector’:
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:481:4: warning: ‘free’ called on pointer ‘v’ with nonzero offset 4 [-Wfree-nonheap-object]
+  481 |    free((char*) (v+1));
+      |    ^~~~~~~~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c: In function ‘free_matrix’:
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:495:8: warning: ‘free’ called on pointer ‘*(float **)((char *)mat+ ivtmp*8)’ with nonzero offset 4 [-Wfree-nonheap-object]
+  495 |        free ((char*) (mat[i]+1));
+      |        ^~~~~~~~~~~~~~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:497:4: warning: ‘free’ called on pointer ‘mat’ with nonzero offset 8 [-Wfree-nonheap-object]
+  497 |    free ((char*) (mat+1));
+      |    ^~~~~~~~~~~~~~~~~~~~~~
+In function ‘free_vector’,
+    inlined from ‘main’ at /root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:242:5:
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:481:4: warning: ‘free’ called on pointer ‘evals’ with nonzero offset 4 [-Wfree-nonheap-object]
+  481 |    free((char*) (v+1));
+      |    ^~~~~~~~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c: In function ‘main’:
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:167:13: note: returned from ‘vector’
+  167 |     evals = vector(m);     /* Storage alloc. for vector of eigenvalues */
+      |             ^~~~~~~~~
+In function ‘free_vector’,
+    inlined from ‘main’ at /root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:243:5:
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:481:4: warning: ‘free’ called on pointer ‘interm’ with nonzero offset 4 [-Wfree-nonheap-object]
+  481 |    free((char*) (v+1));
+      |    ^~~~~~~~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c: In function ‘main’:
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:168:14: note: returned from ‘vector’
+  168 |     interm = vector(m);    /* Storage alloc. for 'intermediate' vector */
+      |              ^~~~~~~~~
+gcc -O2 -I/root/pac-sw/bench/cortexsuite/cortex/pca/includes -I/root/pac-sw/bench/cortexsuite/cortex/pca /root/pac-sw/bench/cortexsuite/cortex/pca/pca.c /root/pac-sw/bench/cortexsuite/cortex/pca/includes/photonTiming.c -O2 -o pca-large -lm
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c: In function ‘free_vector’:
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:481:4: warning: ‘free’ called on pointer ‘v’ with nonzero offset 4 [-Wfree-nonheap-object]
+  481 |    free((char*) (v+1));
+      |    ^~~~~~~~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c: In function ‘free_matrix’:
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:495:8: warning: ‘free’ called on pointer ‘*(float **)((char *)mat+ ivtmp*8)’ with nonzero offset 4 [-Wfree-nonheap-object]
+  495 |        free ((char*) (mat[i]+1));
+      |        ^~~~~~~~~~~~~~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:497:4: warning: ‘free’ called on pointer ‘mat’ with nonzero offset 8 [-Wfree-nonheap-object]
+  497 |    free ((char*) (mat+1));
+      |    ^~~~~~~~~~~~~~~~~~~~~~
+In function ‘free_vector’,
+    inlined from ‘main’ at /root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:242:5:
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:481:4: warning: ‘free’ called on pointer ‘evals’ with nonzero offset 4 [-Wfree-nonheap-object]
+  481 |    free((char*) (v+1));
+      |    ^~~~~~~~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c: In function ‘main’:
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:167:13: note: returned from ‘vector’
+  167 |     evals = vector(m);     /* Storage alloc. for vector of eigenvalues */
+      |             ^~~~~~~~~
+In function ‘free_vector’,
+    inlined from ‘main’ at /root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:243:5:
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:481:4: warning: ‘free’ called on pointer ‘interm’ with nonzero offset 4 [-Wfree-nonheap-object]
+  481 |    free((char*) (v+1));
+      |    ^~~~~~~~~~~~~~~~~~~
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c: In function ‘main’:
+/root/pac-sw/bench/cortexsuite/cortex/pca/pca.c:168:14: note: returned from ‘vector’
+  168 |     interm = vector(m);    /* Storage alloc. for 'intermediate' vector */
+      |              ^~~~~~~~~

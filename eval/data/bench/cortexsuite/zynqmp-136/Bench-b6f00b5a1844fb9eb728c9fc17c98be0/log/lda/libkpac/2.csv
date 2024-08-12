@@ -1,0 +1,4 @@
+/root/pac-sw/bench/cortexsuite/cortex/lda/lda-small,0.000634913,26,25,28,28
+/usr/lib/aarch64-linux-gnu/libc.so.6,0.005045564,0,0,0,0
+/usr/lib/aarch64-linux-gnu/libm.so.6,0.002384218,0,0,0,0
+/usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1,0.000437734,0,0,0,0

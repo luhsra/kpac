@@ -1,0 +1,16 @@
+rm -f *.o spc-small spc-medium spc-large
+gcc -O2 -I/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/includes -I/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/eigen.c /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/kmeans.c /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/includes/photonTiming.c -O2 -o spc-small -lm
+/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c: In function ‘main’:
+/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c:166:9: warning: implicit declaration of function ‘eigen’ [-Wimplicit-function-declaration]
+  166 |         eigen(A, ev, n);
+      |         ^~~~~
+gcc -O2 -I/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/includes -I/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/eigen.c /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/kmeans.c /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/includes/photonTiming.c -O2 -o spc-medium -lm
+/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c: In function ‘main’:
+/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c:166:9: warning: implicit declaration of function ‘eigen’ [-Wimplicit-function-declaration]
+  166 |         eigen(A, ev, n);
+      |         ^~~~~
+gcc -O2 -I/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/includes -I/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/eigen.c /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/kmeans.c /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c /root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/includes/photonTiming.c -O2 -o spc-large -lm
+/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c: In function ‘main’:
+/root/pac-sw/bench/cortexsuite/cortex/clustering/spectral/spectral.c:166:9: warning: implicit declaration of function ‘eigen’ [-Wimplicit-function-declaration]
+  166 |         eigen(A, ev, n);
+      |         ^~~~~

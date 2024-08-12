@@ -1,0 +1,4 @@
+/root/pac-sw/bench/cortexsuite/cortex/clustering/kmeans/kmeans-large,0.000463246,4,3,4,3
+/usr/lib/aarch64-linux-gnu/libc.so.6,0.005156406,0,0,0,0
+/root/pac-sw/pac-pl/pac-pl.so,0.000062687,0,0,0,0
+/usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1,0.000434004,0,0,0,0
